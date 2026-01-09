@@ -625,6 +625,8 @@ exports.updateWalkinPayment = async (req, res) => {
 // Create new walkin
 exports.createWalkin = async (req, res) => {
   try {
+    console.log("🎫 CREATE WALKIN REQUEST");
+
     const {
       customerName,
       customerPhone,
@@ -632,138 +634,63 @@ exports.createWalkin = async (req, res) => {
       customerAddress,
       notes,
       branch,
-      services,
-      products,
+      services = [],
+      products = [],
+      seats = [],
       discount = 0,
       paymentMethod = "cash",
       amountPaid = 0,
+      calculatedTotals, // Client se pre-calculated totals aaenge
     } = req.body;
 
-    console.log("Creating walkin with data:", {
-      customerName,
-      customerPhone,
-      branch,
-      servicesCount: services?.length,
-      productsCount: products?.length,
-    });
-
-    // Validate required fields
-    if (!customerName || !customerPhone || !branch) {
+    // ✅ BASIC VALIDATION
+    if (!customerName?.trim() || !customerPhone?.trim() || !branch) {
       return res.status(400).json({
         success: false,
-        message: "Customer name, phone, and branch are required",
+        message: "Customer name, phone and branch are required",
       });
     }
 
-    // Validate services
-    let servicesData = [];
-    let servicesTotal = 0;
+    // ✅ USE PRE-CALCULATED TOTALS (Client side calculation)
+    const totals = calculatedTotals || {
+      subtotal: 0,
+      totalAmount: 0,
+      dueAmount: 0,
+    };
 
-    if (services && services.length > 0) {
-      for (const serviceItem of services) {
-        try {
-          const service = await Service.findById(
-            serviceItem.serviceId
-          ).populate("category");
+    // ✅ PREPARE SIMPLE DATA
+    const servicesData = services.map((service) => ({
+      service: service.serviceId,
+      pricing: service.pricingId || new mongoose.Types.ObjectId(),
+      price: service.price || 0,
+      duration: service.duration || 30,
+      staff: service.staffId || null,
+    }));
 
-          if (!service) {
-            return res.status(400).json({
-              success: false,
-              message: `Service ${serviceItem.serviceId} not found`,
-            });
-          }
+    const productsData = products.map((product) => ({
+      product: product.productId,
+      quantity: product.quantity || 1,
+      price: product.price || 0,
+      total: (product.price || 0) * (product.quantity || 1),
+      stockDeducted: false,
+    }));
 
-          const pricing = service.pricing.find(
-            (p) => p._id.toString() === serviceItem.pricingId
-          );
+    const seatsData = seats.map((seat) => ({
+      seat: seat.seatId,
+      seatNumber: seat.seatNumber,
+      seatType: seat.seatType,
+      duration: seat.duration || 1,
+      price: seat.price || 0,
+      total: seat.total || 0,
+      bookedAt: new Date(),
+    }));
 
-          if (!pricing) {
-            return res.status(400).json({
-              success: false,
-              message: `Pricing option not found for service ${service.name}`,
-            });
-          }
-
-          servicesData.push({
-            category: service.category?._id || null,
-            service: service._id,
-            pricing: pricing._id,
-            duration: pricing.durationMinutes,
-            price: pricing.price,
-            staff: serviceItem.staffId || null,
-          });
-
-          servicesTotal += pricing.price;
-        } catch (error) {
-          console.error("Error processing service:", error);
-          return res.status(400).json({
-            success: false,
-            message: `Invalid service data: ${error.message}`,
-          });
-        }
-      }
-    }
-
-    // Validate products
-    let productsData = [];
-    let productsTotal = 0;
-
-    if (products && products.length > 0) {
-      for (const productItem of products) {
-        try {
-          const product = await Product.findById(productItem.productId);
-
-          if (!product) {
-            return res.status(400).json({
-              success: false,
-              message: `Product ${productItem.productId} not found`,
-            });
-          }
-
-          const quantity = productItem.quantity || 1;
-          const availableStock = product.totalStock - (product.inUseStock || 0);
-
-          if (availableStock < quantity) {
-            return res.status(400).json({
-              success: false,
-              message: `Insufficient available stock for ${product.name}. Available: ${availableStock}, Requested: ${quantity}`,
-            });
-          }
-
-          const productTotal = product.price * quantity;
-
-          productsData.push({
-            product: product._id,
-            quantity: quantity,
-            price: product.price,
-            total: productTotal,
-            stockDeducted: false,
-            availableStockAtBooking: availableStock,
-          });
-
-          productsTotal += productTotal;
-        } catch (error) {
-          console.error("Error processing product:", error);
-          return res.status(400).json({
-            success: false,
-            message: `Invalid product data: ${error.message}`,
-          });
-        }
-      }
-    }
-
-    // Calculate totals
-    const subtotal = servicesTotal + productsTotal;
-    const discountAmount = discount || 0;
-    const totalAmount = subtotal - discountAmount;
-    const dueAmount = totalAmount - (amountPaid || 0);
-
-    // Set initial status based on payment
+    // ✅ DETERMINE STATUS
     let paymentStatus = "pending";
     let status = "draft";
 
     if (amountPaid > 0) {
-      if (dueAmount > 0) {
+      if (totals.dueAmount > 0) {
         paymentStatus = "partially_paid";
         status = "confirmed";
       } else {
@@ -772,64 +699,149 @@ exports.createWalkin = async (req, res) => {
       }
     }
 
-    // Create walkin
+    // ✅ CREATE WALKIN
     const walkinData = {
-      customerName,
-      customerPhone,
-      customerEmail,
-      customerAddress,
-      notes,
+      customerName: customerName.trim(),
+      customerPhone: customerPhone.trim(),
+      customerEmail: (customerEmail || "").trim(),
+      customerAddress: (customerAddress || "").trim(),
+      notes: (notes || "").trim(),
       branch,
       services: servicesData,
       products: productsData,
-      subtotal,
-      discount: discountAmount,
-      totalAmount,
+      seats: seatsData,
+      subtotal: totals.subtotal || 0,
+      discount: Number(discount) || 0,
+      totalAmount: totals.totalAmount || 0,
       paymentMethod,
-      amountPaid: amountPaid || 0,
-      dueAmount,
+      amountPaid: Number(amountPaid) || 0,
+      dueAmount: totals.dueAmount || 0,
       paymentStatus,
       status,
       createdBy: req.user?._id || null,
     };
 
+    console.log("📝 Saving walkin to database...");
     const walkin = await Walkin.create(walkinData);
+    console.log("✅ Walkin saved:", walkin.walkinNumber);
 
-    // If payment is already made, deduct stock immediately
-    if (amountPaid > 0) {
-      await deductStockForWalkin(walkin._id);
-    }
-
-    // Generate PDF and QR code
-    try {
-      const { pdfPath, qrCodeData } = await generateWalkinAssets(walkin);
-      walkin.pdfUrl = `/uploads/walkins/${path.basename(pdfPath)}`;
-      walkin.qrCode = qrCodeData;
-      await walkin.save();
-    } catch (assetError) {
-      console.error("Error generating assets:", assetError);
-    }
-
-    // Populate response data
-    const populatedWalkin = await Walkin.findById(walkin._id)
-      .populate("services.service services.category products.product")
-      .populate("services.staff", "name employeeId")
-      .populate("createdBy", "name email");
-
+    // ✅ IMMEDIATE RESPONSE (NO WAITING FOR PDF/QR)
     res.status(201).json({
       success: true,
       message: "Walkin created successfully!",
-      data: populatedWalkin,
-      stockDeducted: amountPaid > 0,
+      data: {
+        _id: walkin._id,
+        walkinNumber: walkin.walkinNumber,
+        invoiceNumber: walkin.invoiceNumber,
+        customerName: walkin.customerName,
+        totalAmount: walkin.totalAmount,
+        status: walkin.status,
+        paymentStatus: walkin.paymentStatus,
+        createdAt: walkin.createdAt,
+      },
+      actions: {
+        downloadPDF: `/api/v1/walkins/${walkin._id}/pdf`,
+        viewDetails: `/admin/walkins/${walkin._id}`,
+      },
     });
+
+    // ✅ BACKGROUND TASKS (AFTER RESPONSE)
+    setTimeout(async () => {
+      try {
+        console.log("🔄 Starting background tasks...");
+
+        // 1. Deduct stock if paid
+        if (amountPaid > 0 && walkin.status === "confirmed") {
+          await deductStock(walkin._id);
+        }
+
+        // 2. Book seats
+        if (seatsData.length > 0) {
+          await bookSeats(walkin._id);
+        }
+
+        // 3. Generate PDF (optional)
+        await generatePDF(walkin);
+
+        console.log("✅ All background tasks completed");
+      } catch (bgError) {
+        console.error("❌ Background task error:", bgError);
+      }
+    }, 1000);
   } catch (error) {
-    console.error("Error creating walkin:", error);
+    console.error("❌ CREATE WALKIN ERROR:", error);
+
+    // Handle specific errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Walkin number already exists",
+      });
+    }
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: Object.values(error.errors).map((e) => e.message),
+      });
+    }
+
     res.status(500).json({
       success: false,
-      message: "Failed to create walkin: " + error.message,
+      message: "Failed to create walkin",
     });
   }
 };
+
+// ================================================
+// 🔧 HELPER FUNCTIONS
+// ================================================
+
+async function deductStock(walkinId) {
+  try {
+    const walkin = await Walkin.findById(walkinId);
+    if (!walkin) return;
+
+    const Product = require("../models/Product");
+
+    for (const productItem of walkin.products) {
+      const product = await Product.findById(productItem.product);
+      if (product && product.totalStock >= productItem.quantity) {
+        product.totalStock -= productItem.quantity;
+        await product.save();
+        productItem.stockDeducted = true;
+      }
+    }
+
+    await walkin.save();
+    console.log("✅ Stock deducted");
+  } catch (error) {
+    console.error("Stock deduction error:", error);
+  }
+}
+
+async function bookSeats(walkinId) {
+  try {
+    const walkin = await Walkin.findById(walkinId);
+    if (!walkin) return;
+
+    const Seat = require("../models/Seat");
+
+    for (const seatItem of walkin.seats) {
+      const seat = await Seat.findById(seatItem.seat);
+      if (seat) {
+        seat.status = "Booked";
+        seat.lastBooked = new Date();
+        await seat.save();
+      }
+    }
+
+    console.log("✅ Seats booked");
+  } catch (error) {
+    console.error("Seat booking error:", error);
+  }
+}
 
 // Get all walkins
 exports.getAllWalkins = async (req, res) => {

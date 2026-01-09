@@ -72,11 +72,13 @@ const subcategoryRoutes = require("./routes/subCategoryRoutes");
 const addressRoutes = require("./routes/addressRoutes");
 const employeeRoleRoutes = require("./routes/employeeRoleRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
-
+const branchTypeRoutes = require("./routes/branchTypeRoutes");
+const seatRoutes = require("./routes/seatRoutes");
 // Routes
 app.use("/api/v1/auth", authLimiter, authRoutes);
 app.use("/api/v1/orders", orderLimiter, orderRoutes);
-
+app.use("/api/v1/branch-types", branchTypeRoutes);
+app.use("/api/v1/seats", seatRoutes);
 // Other API routes
 app.use("/api/v1/appointments", appointmentRoutes);
 app.use("/api/v1/products", productRoutes);

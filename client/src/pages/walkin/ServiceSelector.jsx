@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2, Search } from "lucide-react";
-import { Input, Select, Table, Card, Tag } from "antd";
+import { Input, Select, Table, Card, Tag, message } from "antd"; // ADD MESSAGE
 import ServiceModal from "./ServiceModal";
 
 const { Option } = Select;
@@ -11,6 +11,7 @@ const ServiceSelector = ({
   services,
   categories,
   availableStaff,
+  // REMOVE props.onServiceSelect if not used
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCategory, setFilteredCategory] = useState("");
@@ -18,56 +19,60 @@ const ServiceSelector = ({
   const [selectedService, setSelectedService] = useState(null);
 
   const handleOpenServiceModal = (service) => {
-    console.log("Opening modal for service:", service.name); // Debug log
+    console.log("📦 Service clicked:", service.name); // Debug log
     setSelectedService(service);
     setIsServiceModalVisible(true);
   };
 
-  // ServiceSelector.jsx - FIX the handleServiceSelect function
-  // In ServiceModal.jsx se proper data receive karo:
-
+  // ✅ FIXED: Proper service select handler
   const handleServiceSelect = (serviceId, pricingId, selectedStaffId) => {
-    console.log("Selecting service:", serviceId, pricingId, selectedStaffId);
+    console.log("✅ Service selected in ServiceSelector:", {
+      serviceId,
+      pricingId,
+      selectedStaffId,
+    });
 
+    // Find the service
     const service = services.find((s) => s._id === serviceId);
     if (!service) {
       console.error("Service not found:", serviceId);
+      message.error("Service not found!");
       return;
     }
 
+    // Find pricing
     const pricing = service.pricing?.find((p) => p._id === pricingId);
     if (!pricing) {
       console.error("Pricing not found:", pricingId);
+      message.error("Pricing option not found!");
       return;
     }
 
+    // Find category
+    const category = categories.find(
+      (c) => c._id === service.category?._id || service.category
+    );
+
+    // Create service data
     const newService = {
       serviceId,
       pricingId,
-      categoryId: service.category?._id || "",
+      categoryId: service.category?._id || service.category || "",
+      categoryName: category?.name || "Uncategorized",
       name: service.name,
-      duration: pricing.durationMinutes || 0,
+      duration: pricing.durationMinutes || pricing.duration || 0,
       price: pricing.price || 0,
       staffId: selectedStaffId || null,
-      categoryName: service.category?.name || "Uncategorized",
       pricingLabel: pricing.label || pricing.duration || "Standard",
     };
 
-    console.log("✅ Created new service object:", newService);
+    console.log("🎯 Adding service to form:", newService);
 
-    // 🚨 CRITICAL FIX: Directly call props function with data
-    if (typeof setFormData === "function") {
-      // Check if setFormData expects a function or object
-      setFormData((prev) => ({
-        ...prev,
-        selectedServices: [...prev.selectedServices, newService],
-      }));
-
-      // Also trigger any callback if provided
-      if (typeof props.onServiceSelect === "function") {
-        props.onServiceSelect(newService);
-      }
-    }
+    // Add to selected services
+    setFormData((prev) => ({
+      ...prev,
+      selectedServices: [...prev.selectedServices, newService],
+    }));
 
     setIsServiceModalVisible(false);
     setSelectedService(null);
@@ -75,6 +80,8 @@ const ServiceSelector = ({
   };
 
   const handleStaffAssignment = (serviceId, staffId) => {
+    console.log("👤 Staff selected:", staffId);
+
     setFormData((prev) => ({
       ...prev,
       selectedServices: prev.selectedServices.map((service) =>
@@ -90,6 +97,7 @@ const ServiceSelector = ({
         (service) => service.serviceId !== serviceId
       ),
     }));
+    message.info("Service removed");
   };
 
   // Filter services
@@ -105,6 +113,26 @@ const ServiceSelector = ({
 
     return matchesSearch && matchesCategory;
   });
+
+  // ✅ FIXED: Staff column with better debugging
+  const getFilteredStaffForService = (service) => {
+    if (!service) return availableStaff;
+
+    const serviceObj = services.find((s) => s._id === service.serviceId);
+    if (!serviceObj) return availableStaff;
+
+    const categoryId = serviceObj.category?._id || serviceObj.category;
+    const category = categories.find((c) => c._id === categoryId);
+
+    if (!category?.assignedEmployeeRole) return availableStaff;
+
+    const requiredRole = category.assignedEmployeeRole.toLowerCase();
+
+    return availableStaff.filter((staff) => {
+      const staffRole = staff.employeeRole?.toLowerCase() || "";
+      return staffRole === requiredRole;
+    });
+  };
 
   const columns = [
     {
@@ -129,74 +157,19 @@ const ServiceSelector = ({
       key: "price",
       render: (price) => `₹${price || 0}`,
     },
-    // Staff column in ServiceSelector.jsx:
-    // ServiceSelector.jsx - staff column update karo:
     {
       title: "Staff",
       key: "staff",
       render: (_, record) => {
-        console.log("=== STAFF COLUMN DEBUG ===");
-        console.log("Record serviceId:", record.serviceId);
-        console.log("Record name:", record.name);
-
-        // Find the service
-        const service = services.find((s) => s._id === record.serviceId);
-        console.log("Service found:", service?.name);
-
-        // Get category ID
-        const categoryId =
-          service?.category?._id || service?.category || record.categoryId;
-        console.log("Category ID:", categoryId);
-
-        // Find category
+        const filteredStaff = getFilteredStaffForService(record);
+        const serviceObj = services.find((s) => s._id === record.serviceId);
+        const categoryId = serviceObj?.category?._id || serviceObj?.category;
         const category = categories.find((c) => c._id === categoryId);
-        console.log("Category found:", category?.name);
-        console.log(
-          "Category assignedEmployeeRole:",
-          category?.assignedEmployeeRole
-        );
-
-        // Required role
-        const requiredRole =
-          category?.assignedEmployeeRole?.toLowerCase() || "";
-        console.log("Required role (lowercase):", requiredRole);
-
-        // Check available staff
-        console.log(
-          "Available staff:",
-          availableStaff.map((s) => ({
-            name: s.name,
-            role: s.employeeRole,
-            roleLower: s.employeeRole?.toLowerCase(),
-          }))
-        );
-
-        // Filter staff
-        const filteredStaff = availableStaff.filter((staff) => {
-          if (!requiredRole) return true;
-
-          const staffRole = staff.employeeRole?.toLowerCase() || "";
-          console.log(
-            `Comparing: staff="${staffRole}" vs required="${requiredRole}"`
-          );
-
-          return staffRole === requiredRole;
-        });
-
-        console.log("Filtered staff count:", filteredStaff.length);
-        console.log(
-          "Filtered staff:",
-          filteredStaff.map((s) => s.name)
-        );
-        console.log("=== END DEBUG ===");
+        const requiredRole = category?.assignedEmployeeRole || "Any";
 
         return (
           <Select
-            placeholder={
-              filteredStaff.length === 0
-                ? `No ${requiredRole || "matching"} staff`
-                : `Assign ${requiredRole || "staff"}`
-            }
+            placeholder={`Assign ${requiredRole}`}
             style={{ width: 200 }}
             value={record.staffId}
             onChange={(value) => handleStaffAssignment(record.serviceId, value)}
@@ -330,16 +303,17 @@ const ServiceSelector = ({
           {/* Selected Services Table */}
           {formData.selectedServices.length > 0 && (
             <div className="mt-8">
-              <h3 className="text-lg font-[poppins] font-semibold mb-4">
+              <h3 className="text-lg font-[poppins] font-semibold mb-4 text-black">
                 Selected Services ({formData.selectedServices.length})
               </h3>
-              <div className="bg-gray-50 rounded-lg p-4">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <Table
                   dataSource={formData.selectedServices}
                   columns={columns}
                   pagination={false}
                   size="small"
                   rowKey="serviceId"
+                  className="custom-table"
                 />
               </div>
             </div>
@@ -347,7 +321,7 @@ const ServiceSelector = ({
         </>
       )}
 
-      {/* Service Modal - Always render but control visibility */}
+      {/* Service Modal */}
       <ServiceModal
         visible={isServiceModalVisible}
         service={selectedService}
@@ -357,7 +331,47 @@ const ServiceSelector = ({
           setSelectedService(null);
         }}
         onSelect={handleServiceSelect}
+        // NEW PROPS ADD KARO:
+        categories={categories}
+        availableStaff={availableStaff}
       />
+
+      {/* Global Styles */}
+      <style jsx global>{`
+        .custom-table .ant-table {
+          color: black;
+        }
+
+        .custom-table .ant-table-thead > tr > th {
+          background-color: #f9fafb;
+          color: black !important;
+          font-weight: 600;
+          border-bottom: 2px solid #e5e7eb;
+        }
+
+        .custom-table .ant-table-tbody > tr > td {
+          color: black;
+          border-bottom: 1px solid #f0f0f0;
+        }
+
+        .custom-table .ant-table-tbody > tr:hover > td {
+          background-color: #f8fafc;
+        }
+
+        .line-clamp-1 {
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 1;
+          -webkit-box-orient: vertical;
+        }
+
+        .line-clamp-2 {
+          overflow: hidden;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+      `}</style>
     </div>
   );
 };

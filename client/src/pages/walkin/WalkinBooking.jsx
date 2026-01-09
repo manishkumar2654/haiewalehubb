@@ -10,7 +10,7 @@ import CustomerForm from "./CustomerForm";
 import ServiceSelector from "./ServiceSelector";
 import ProductSelector from "./ProductSelector";
 import PaymentSummary from "./PaymentSummary";
-import WalkinList from "./WalkinList"; // IMPORT WALKINLIST
+import WalkinList from "./WalkinList";
 
 const { Step } = Steps;
 const { TabPane } = Tabs;
@@ -26,8 +26,9 @@ const WalkinBooking = () => {
   const [availableStaff, setAvailableStaff] = useState([]);
   const [branches, setBranches] = useState([]);
   const [branchDetails, setBranchDetails] = useState({});
+  const [activeTab, setActiveTab] = useState("1"); // "1" for New Booking, "2" for All Walk-ins
 
-  // Main form data - ONLY FOR NEW BOOKING
+  // Main form data
   const [formData, setFormData] = useState({
     customerName: "",
     customerPhone: "",
@@ -37,6 +38,7 @@ const WalkinBooking = () => {
     branch: "",
     selectedServices: [],
     selectedProducts: [],
+    selectedSeats: [],
     discount: 0,
     tax: 0,
     paymentMethod: "cash",
@@ -48,7 +50,6 @@ const WalkinBooking = () => {
     fetchWalkins();
   }, []);
 
-  // Fetch staff and branch details when branch changes
   useEffect(() => {
     if (formData.branch) {
       fetchBranchStaff(formData.branch);
@@ -174,6 +175,13 @@ const WalkinBooking = () => {
         quantity: p.quantity || 1,
       }));
 
+      const seatsPayload = formData.selectedSeats.map((seat) => ({
+        seatId: seat.seatId,
+        seatNumber: seat.seatNumber,
+        seatType: seat.seatType,
+        duration: seat.duration || 1,
+      }));
+
       const payload = {
         customerName: formData.customerName.trim(),
         customerPhone: formData.customerPhone.trim(),
@@ -183,6 +191,7 @@ const WalkinBooking = () => {
         branch: formData.branch,
         services: servicesPayload,
         products: productsPayload,
+        seats: seatsPayload,
         discount: formData.discount || 0,
         paymentMethod: formData.paymentMethod || "cash",
         amountPaid: formData.amountPaid || 0,
@@ -190,10 +199,26 @@ const WalkinBooking = () => {
       };
 
       const res = await api.post("/walkins", payload);
-      message.success("Walkin created successfully!");
-      setWalkinData(res.data.data);
+
+      // ✅ SUCCESS - DO ALL ACTIONS
+      message.success(
+        `Walkin #${res.data.data.walkinNumber} created successfully!`
+      );
+
+      // 1. Reset form
       resetForm();
-      fetchWalkins();
+
+      // 2. Fetch updated walkins list
+      await fetchWalkins();
+
+      // 3. Switch to "All Walk-ins" tab (Tab 2)
+      setActiveTab("2");
+
+      // 4. Scroll to top for better UX
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      // 5. Store the created walkin data
+      setWalkinData(res.data.data);
     } catch (error) {
       console.error("Submit error details:", error);
       if (error.response?.data?.message) {
@@ -216,6 +241,7 @@ const WalkinBooking = () => {
       branch: branches.length > 0 ? branches[0].name : "",
       selectedServices: [],
       selectedProducts: [],
+      selectedSeats: [],
       discount: 0,
       tax: 0,
       paymentMethod: "cash",
@@ -272,7 +298,7 @@ const WalkinBooking = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-rose-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 to-rose-50 pt-20 p-4 md:p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-bold text-amber-900 mb-2">
@@ -290,7 +316,7 @@ const WalkinBooking = () => {
         />
       )}
 
-      <Tabs defaultActiveKey="1" className="mb-6">
+      <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
         {/* TAB 1: NEW WALK-IN BOOKING */}
         <TabPane tab="New Walk-in Booking" key="1">
           <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
@@ -333,7 +359,7 @@ const WalkinBooking = () => {
           </div>
         </TabPane>
 
-        {/* TAB 2: ALL WALK-INS (USING WALKINLIST COMPONENT) */}
+        {/* TAB 2: ALL WALK-INS */}
         <TabPane tab="All Walk-ins" key="2">
           <Card>
             <WalkinList

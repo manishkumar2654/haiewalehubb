@@ -1,7 +1,7 @@
-// UpdateProductSelector.jsx - SPECIFICALLY FOR UPDATE MODAL
+// UpdateProductSelector.jsx - CORRECT VERSION
 import React, { useState } from "react";
 import { ShoppingBag, Plus, Minus } from "lucide-react";
-import { Input, Card, Button, Tag } from "antd";
+import { Card, Button, Tag } from "antd";
 
 const UpdateProductSelector = ({
   products,
@@ -12,13 +12,24 @@ const UpdateProductSelector = ({
 
   // Calculate available stock
   const getAvailableStock = (product) => {
+    if (!product) return 0;
     const totalStock = product.totalStock || product.stock || 0;
     const inUseStock = product.inUseStock || 0;
     return totalStock - inUseStock;
   };
-
+  console.log(
+    "🚨 File content check - Component name:",
+    // Check which component is defined
+    typeof UpdateServiceSelector !== "undefined"
+      ? "UpdateServiceSelector"
+      : typeof UpdateProductSelector !== "undefined"
+      ? "UpdateProductSelector"
+      : "No component found"
+  );
   // Handle product select
   const handleProductClick = (product) => {
+    if (!product || !product._id) return;
+
     const availableStock = getAvailableStock(product);
 
     if (availableStock <= 0) {
@@ -120,6 +131,16 @@ const UpdateProductSelector = ({
       return sum + product.price * quantity;
     }, 0);
   };
+
+  // ✅ FIX: Check if products array exists
+  if (!products || !Array.isArray(products)) {
+    return (
+      <div className="text-center py-12">
+        <ShoppingBag className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+        <p className="text-gray-600">No products available</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

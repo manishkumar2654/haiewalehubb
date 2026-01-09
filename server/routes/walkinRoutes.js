@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const walkinController = require("../controllers/walkinController");
 const { protect } = require("../middlewares/authMiddleware");
-
+const walkinCaculatorController = require("../controllers/walkinCalculatorController");
 // Basic walkin routes
 router.post("/", walkinController.createWalkin);
 router.get("/", walkinController.getAllWalkins);
@@ -27,5 +27,5 @@ router.get("/branches/list", walkinController.getBranches);
 router.get("/employee-roles", walkinController.getEmployeeRoles);
 router.get("/staff/filtered", walkinController.getFilteredStaff);
 router.get("/staff/branch", walkinController.getBranchStaff);
-
+router.post("/calculate-price", walkinCaculatorController.calculatePrice);
 module.exports = router;

@@ -4,7 +4,6 @@ const walkinServiceSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Category",
-    required: true,
   },
   service: {
     type: mongoose.Schema.Types.ObjectId,
@@ -44,7 +43,18 @@ const walkinProductSchema = new mongoose.Schema({
   // Store available stock at time of booking for reference
   availableStockAtBooking: Number,
 });
-
+const walkinSeatSchema = new mongoose.Schema({
+  seat: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Seat",
+  },
+  seatNumber: String,
+  seatType: String,
+  duration: Number,
+  price: Number,
+  total: Number,
+  bookedAt: Date,
+});
 const walkinSchema = new mongoose.Schema(
   {
     // Customer Information
@@ -77,6 +87,7 @@ const walkinSchema = new mongoose.Schema(
     // Services & Products
     services: [walkinServiceSchema],
     products: [walkinProductSchema],
+    seats: [walkinSeatSchema],
 
     // Pricing
     subtotal: {
@@ -161,7 +172,10 @@ walkinSchema.pre("save", function (next) {
   this.products.forEach((product) => {
     productsTotal += product.total;
   });
-
+  let seatsTotal = 0; // ADD SEATS CALCULATION
+  this.seats?.forEach((seat) => {
+    seatsTotal += seat.total || 0;
+  });
   this.subtotal = servicesTotal + productsTotal;
   this.totalAmount = this.subtotal - this.discount + this.tax;
 

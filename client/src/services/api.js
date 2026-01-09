@@ -74,12 +74,12 @@ export const getRoomsByBranch = (branchId) =>
   api.get(`/admin/rooms/branch/${branchId}`);
 
 // Branches API calls
-export const getBranches = () => api.get("/admin/branches");
-export const createBranch = (branchData) =>
-  api.post("/admin/branches", branchData);
-export const updateBranch = (id, branchData) =>
-  api.put(`/admin/branches/${id}`, branchData);
-export const deleteBranch = (id) => api.delete(`/admin/branches/${id}`);
+// export const getBranches = () => api.get("/admin/branches");
+// export const createBranch = (branchData) =>
+//   api.post("/admin/branches", branchData);
+// export const updateBranch = (id, branchData) =>
+//   api.put(`/admin/branches/${id}`, branchData);
+// export const deleteBranch = (id) => api.delete(`/admin/branches/${id}`);
 // Stats API calls
 export const getDashboardStats = () => api.get("/admin/stats");
 export const getStatsByDateRange = (startDate, endDate) =>
@@ -87,4 +87,37 @@ export const getStatsByDateRange = (startDate, endDate) =>
 export const getBranchStats = (branchId) =>
   api.get(`/admin/stats/branch/${branchId}`);
 export const getRealTimeStats = () => api.get("/admin/stats/realtime");
+
+// Branch Types
+export const getBranchTypes = () => api.get("/api/v1/branch-types");
+export const getActiveBranchTypes = () =>
+  api.get("/api/v1/branch-types/active");
+export const createBranchType = (data) =>
+  api.post("/api/v1/branch-types", data);
+export const updateBranchType = (id, data) =>
+  api.put(`/api/v1/branch-types/${id}`, data);
+export const deleteBranchType = (id) =>
+  api.delete(`/api/v1/branch-types/${id}`);
+export const toggleBranchTypeStatus = (id) =>
+  api.patch(`/api/v1/branch-types/${id}/toggle-status`);
+
+// Branches
+export const getBranches = () => api.get("/api/v1/branches");
+export const getBranchById = (id) => api.get(`/api/v1/branches/${id}`);
+export const createBranch = (data) => api.post("/api/v1/branches", data);
+export const updateBranch = (id, data) =>
+  api.put(`/api/v1/branches/${id}`, data);
+export const deleteBranch = (id) => api.delete(`/api/v1/branches/${id}`);
+export const toggleBranchStatus = (id, data) =>
+  api.patch(`/api/v1/branches/${id}/toggle-status`, data);
+
+// Seats
+export const getSeatsByBranch = (branchId) =>
+  api.get(`/api/v1/seats/branch/${branchId}`);
+export const createSeat = (data) => api.post("/api/v1/seats", data);
+export const updateSeat = (id, data) => api.put(`/api/v1/seats/${id}`, data);
+export const deleteSeat = (id) => api.delete(`/api/v1/seats/${id}`);
+export const updateSeatStatus = (id, data) =>
+  api.patch(`/api/v1/seats/${id}/status`, data);
+export const bulkCreateSeats = (data) => api.post("/api/v1/seats/bulk", data);
 export default api;
