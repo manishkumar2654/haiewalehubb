@@ -25,7 +25,7 @@ const Footer = () => {
 
   const handleWhatsApp = (phoneNumber) => {
     const message = encodeURIComponent(
-      "Hello S.Tatsaya, I'd like to know more about your services."
+      "Hello Hair Hub, I'd like to know more about your services."
     );
     window.open(`https://wa.me/${phoneNumber}?text=${message}`, "_blank");
   };
@@ -46,46 +46,46 @@ const Footer = () => {
     },
     {
       icon: MessageCircle,
-      action: () => handleWhatsApp("9713326656"),
+      action: () => handleWhatsApp("9981427186"),
       color: "text-green-600",
       bg: "bg-green-100",
     },
   ];
 
   // Branch data - compact format
-  const branches = [
-    {
-      name: "Gold Branch",
-      color: "border-amber-500",
-      bg: "bg-amber-50",
-      phones: ["9713326656", "9826672020", "0731-4996661"],
-      address:
-        "39, Sector-D, Scheme No. 140, in front of overhead water tank 19 No. Zone",
-    },
-    {
-      name: "Diamond Branch",
-      color: "border-cyan-500",
-      bg: "bg-cyan-50",
-      phones: ["9111532020", "9111392020", "0731-4073879"],
-      address: "540, Greater Brijeshwari, in front of Empire Residency",
-    },
-    {
-      name: "Silver Branch",
-      color: "border-gray-500",
-      bg: "bg-gray-50",
-      phones: ["9111332020", "8821024040", "0731-4964449"],
-      address: "36, Sector-F-B, Scheme No. 94",
-    },
-  ];
+  // const branches = [
+  //   {
+  //     name: "Gold Branch",
+  //     color: "border-amber-500",
+  //     bg: "bg-amber-50",
+  //     phones: ["9713326656", "9826672020", "0731-4996661"],
+  //     address:
+  //       "39, Sector-D, Scheme No. 140, in front of overhead water tank 19 No. Zone",
+  //   },
+  //   {
+  //     name: "Diamond Branch",
+  //     color: "border-cyan-500",
+  //     bg: "bg-cyan-50",
+  //     phones: ["9111532020", "9111392020", "0731-4073879"],
+  //     address: "540, Greater Brijeshwari, in front of Empire Residency",
+  //   },
+  //   {
+  //     name: "Silver Branch",
+  //     color: "border-gray-500",
+  //     bg: "bg-gray-50",
+  //     phones: ["9111332020", "8821024040", "0731-4964449"],
+  //     address: "36, Sector-F-B, Scheme No. 94",
+  //   },
+  // ];
 
   // Quick links with icons
   const quickLinks = [
     { name: "Home", path: "/", icon: Home },
     { name: "Services", path: "/appointment", icon: Scissors },
     { name: "Book Appointments", path: "/appointment", icon: Calendar },
-    { name: "About Us", path: "/about", icon: User },
-    { name: "Contact Us", path: "/contact", icon: Phone },
-    { name: "Terms & Conditions", path: "/terms", icon: Shield },
+    // { name: "About Us", path: "/about", icon: User },
+    // { name: "Contact Us", path: "/contact", icon: Phone },
+    // { name: "Terms & Conditions", path: "/terms", icon: Shield },
   ];
 
   return (
@@ -184,77 +184,13 @@ const Footer = () => {
                 ))}
               </div>
             </div>
-
-            {/* Contact Info - Compact Cards */}
-            <div className="md:col-span-1 lg:col-span-2">
-              <h3 className="text-base font-[philosopher] font-semibold mb-3 text-rose-900">
-                Contact Branches
-              </h3>
-
-              {/* Collapsible Branch Cards */}
-              <div className="space-y-2">
-                {branches.map((branch, index) => (
-                  <div
-                    key={index}
-                    className={`${branch.bg} p-3 rounded-lg shadow-sm border-l-4 ${branch.color} hover:shadow-md transition-shadow duration-300`}
-                  >
-                    <h4 className="font-[poppins] font-semibold text-gray-800 text-sm mb-1.5">
-                      {branch.name}
-                    </h4>
-
-                    {/* Phone Numbers - Horizontal Layout */}
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {branch.phones.map((phone, phoneIndex) => (
-                        <button
-                          key={phoneIndex}
-                          onClick={() => handleCall(phone)}
-                          className="text-xs bg-white px-2 py-0.5 rounded text-gray-700 hover:text-rose-900 font-[poppins] transition-colors border border-gray-200 hover:border-rose-200"
-                        >
-                          {phone}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Address - Truncated */}
-                    <div className="flex items-start">
-                      <MapPin className="h-3 w-3 text-gray-500 mr-1.5 mt-0.5 flex-shrink-0" />
-                      <p
-                        className="text-xs text-gray-600 font-[poppins] truncate"
-                        title={branch.address}
-                      >
-                        {branch.address}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Quick Contact Buttons */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <button
-                  onClick={() => handleCall("9713326656")}
-                  className="flex-1 min-w-[120px] bg-rose-600 text-white px-3 py-1.5 rounded-lg text-sm font-[poppins] hover:bg-rose-700 transition-colors flex items-center justify-center"
-                >
-                  <Phone className="h-3 w-3 mr-1.5" />
-                  Call Now
-                </button>
-                <button
-                  onClick={() => handleWhatsApp("9713326656")}
-                  className="flex-1 min-w-[120px] bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-[poppins] hover:bg-green-700 transition-colors flex items-center justify-center"
-                >
-                  <MessageCircle className="h-3 w-3 mr-1.5" />
-                  WhatsApp
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Bottom Bar - Compact */}
           <div className="border-t border-rose-200/50 mt-6 pt-4">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <p className="text-gray-700 text-xs font-[poppins] text-center md:text-left mb-2 md:mb-0">
-                © {new Date().getFullYear()} S.Tatsaya Spa & Salon. All rights
-                reserved.
+                © {new Date().getFullYear()} Hair Hub. All rights reserved.
               </p>
 
               <div className="flex flex-wrap justify-center gap-3 md:gap-4">
@@ -274,14 +210,13 @@ const Footer = () => {
             {/* Developer Credit - Minimal */}
             <div className="text-center mt-3">
               <p className="text-xs text-gray-500 font-[poppins]">
-                Crafted with ❤️ by{"Aman Raj "} available at{" 9142459858"}
                 <a
-                  href="https://labs.visionary10x.com"
+                  href="https://www.skyinfogroup.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-rose-700 ml-1 hover:text-rose-900 font-medium"
                 >
-                  Visionary10X Team
+                  SkyInfoGroup
                 </a>
               </p>
             </div>

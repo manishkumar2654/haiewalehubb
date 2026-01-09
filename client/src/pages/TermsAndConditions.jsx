@@ -276,7 +276,7 @@ const TermsAndConditions = () => {
                   href="tel:9713326656"
                   className="px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-full font-[poppins] font-semibold hover:bg-white/30 transition-colors shadow-lg border border-white/30"
                 >
-                  Call Now: 9713326656
+                  Call Now: 9981427186
                 </a>
               </div>
             </div>

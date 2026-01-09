@@ -251,12 +251,12 @@ const Navbar = () => {
                 Appointment
               </Link>
 
-              <Link
+              {/* <Link
                 to="/store"
                 className="px-4 py-2 text-sm font-[poppins] font-medium text-rose-900 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all duration-300"
               >
                 Store
-              </Link>
+              </Link> */}
 
               {/* Search Appointment - Only for authorized users */}
               {showSearchAppointment && (
@@ -268,7 +268,7 @@ const Navbar = () => {
                 </Link>
               )}
 
-              <Link
+              {/* <Link
                 to="/about"
                 className="px-4 py-2 text-sm font-[poppins] font-medium text-rose-900 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all duration-300"
               >
@@ -280,7 +280,7 @@ const Navbar = () => {
                 className="px-4 py-2 text-sm font-[poppins] font-medium text-rose-900 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all duration-300"
               >
                 Contact
-              </Link>
+              </Link> */}
             </nav>
 
             {/* Right Section - Icons & User */}
@@ -483,13 +483,13 @@ const Navbar = () => {
                   Appointment
                 </Link>
 
-                <Link
+                {/* <Link
                   to="/store"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-base font-medium text-rose-900 hover:bg-rose-50 rounded-lg transition-colors"
                 >
                   Store
-                </Link>
+                </Link> */}
 
                 {showSearchAppointment && (
                   <Link
@@ -501,7 +501,7 @@ const Navbar = () => {
                   </Link>
                 )}
 
-                <Link
+                {/* <Link
                   to="/about"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-base font-medium text-rose-900 hover:bg-rose-50 rounded-lg transition-colors"
@@ -515,7 +515,7 @@ const Navbar = () => {
                   className="block px-4 py-3 text-base font-medium text-rose-900 hover:bg-rose-50 rounded-lg transition-colors"
                 >
                   Contact
-                </Link>
+                </Link> */}
 
                 {/* Mobile Cart & Heart for logged in users */}
                 {user && (

@@ -226,27 +226,6 @@ const ServiceDetailsPage = () => {
                 <h1 className="text-3xl font-bold text-gray-900 font-[philosopher]">
                   {service.name}
                 </h1>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleShareService}
-                    className="p-2 text-gray-500 hover:text-rose-600 transition-colors"
-                    aria-label="Share service"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={handleAddToFavorites}
-                    className="p-2 text-gray-500 hover:text-rose-600 transition-colors"
-                    aria-label={
-                      isFavorite ? "Remove from favorites" : "Add to favorites"
-                    }
-                  >
-                    <Heart
-                      className="w-5 h-5"
-                      fill={isFavorite ? "currentColor" : "none"}
-                    />
-                  </button>
-                </div>
               </div>
 
               {service.category && (
@@ -260,7 +239,7 @@ const ServiceDetailsPage = () => {
               </p>
 
               {/* Rating (if available) */}
-              <div className="flex items-center gap-2 mb-6">
+              {/* <div className="flex items-center gap-2 mb-6">
                 <div className="flex items-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
@@ -272,7 +251,7 @@ const ServiceDetailsPage = () => {
                 <span className="text-sm text-gray-600 font-[poppins]">
                   4.8 (124 reviews)
                 </span>
-              </div>
+              </div> */}
 
               {/* Pricing Options */}
               <div className="mb-6">
