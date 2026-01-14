@@ -28,4 +28,6 @@ router.get("/employee-roles", walkinController.getEmployeeRoles);
 router.get("/staff/filtered", walkinController.getFilteredStaff);
 router.get("/staff/branch", walkinController.getBranchStaff);
 router.post("/calculate-price", walkinCaculatorController.calculatePrice);
+
+router.get("/employee/:employeeId", walkinController.getEmployeeWalkins);
 module.exports = router;

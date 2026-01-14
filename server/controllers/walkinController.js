@@ -1917,3 +1917,28 @@ exports.completeUpdateWalkin = async (req, res) => {
     });
   }
 };
+// 🆕 Get walkins assigned to specific employee
+exports.getEmployeeWalkins = async (req, res) => {
+  try {
+    const { employeeId } = req.params;
+
+    const walkins = await Walkin.find({
+      "services.staff": employeeId,
+    })
+      .populate("services.service")
+      .populate("services.staff", "name employeeId")
+      .populate("products.product")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: walkins,
+    });
+  } catch (error) {
+    console.error("Error fetching employee walkins:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
