@@ -148,6 +148,102 @@ exports.addServicesToWalkin = async (req, res) => {
 };
 
 // ================================================
+// 🆕 REPLACE Services in Walkin (Clear and Add New)
+// ================================================
+exports.replaceServicesInWalkin = async (req, res) => {
+  try {
+    const { services } = req.body;
+    const walkinId = req.params.id;
+
+    console.log(`Replacing services in walkin: ${walkinId}`);
+
+    const walkin = await Walkin.findById(walkinId);
+    if (!walkin) {
+      return res.status(404).json({
+        success: false,
+        message: "Walkin not found",
+      });
+    }
+
+    // Clear existing services
+    walkin.services = [];
+
+    // If no services provided, just clear and return
+    if (!services || services.length === 0) {
+      await walkin.save();
+      const updatedWalkin = await Walkin.findById(walkinId)
+        .populate("services.service services.category")
+        .populate("services.staff", "name employeeId");
+      
+      return res.json({
+        success: true,
+        message: "Services cleared",
+        data: updatedWalkin,
+      });
+    }
+
+    // Add new services
+    for (const item of services) {
+      const service = await Service.findById(item.serviceId);
+      if (!service) continue;
+
+      // Find pricing
+      let pricing = null;
+      if (item.pricingId && service.pricing) {
+        for (const p of service.pricing) {
+          if (String(p._id) === String(item.pricingId)) {
+            pricing = p;
+            break;
+          }
+        }
+      }
+
+      const price = pricing?.price ?? item.price ?? 0;
+      const duration = pricing?.durationMinutes ?? item.duration ?? 30;
+      const pricingId = pricing?._id ?? item.pricingId;
+
+      walkin.services.push({
+        service: service._id,
+        pricing: pricingId,
+        price: price,
+        duration: duration,
+        category: service.category || null,
+        staff: item.staffId || null,
+      });
+    }
+
+    // Recalculate totals
+    let servicesTotal = 0;
+    walkin.services.forEach((s) => {
+      servicesTotal += s.price || 0;
+    });
+    walkin.subtotal = servicesTotal + (walkin.products?.reduce((sum, p) => sum + (p.total || 0), 0) || 0);
+    walkin.totalAmount = Math.max(walkin.subtotal - (walkin.discount || 0), 0);
+    walkin.dueAmount = Math.max(walkin.totalAmount - (walkin.amountPaid || 0), 0);
+
+    walkin.updatedBy = req.user?._id || null;
+    await walkin.save();
+
+    // Return populated data
+    const updatedWalkin = await Walkin.findById(walkinId)
+      .populate("services.service services.category")
+      .populate("services.staff", "name employeeId");
+
+    res.json({
+      success: true,
+      message: `${walkin.services.length} service(s) saved`,
+      data: updatedWalkin,
+    });
+  } catch (error) {
+    console.error("Error replacing services:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ================================================
 // 🆕 NEW FUNCTION: Add Products to Existing Walkin
 // ================================================
 exports.addProductsToWalkin = async (req, res) => {
@@ -309,6 +405,87 @@ exports.addProductsToWalkin = async (req, res) => {
 };
 
 // ================================================
+// 🆕 REPLACE Products in Walkin (Clear and Add New)
+// ================================================
+exports.replaceProductsInWalkin = async (req, res) => {
+  try {
+    const { products } = req.body;
+    const walkinId = req.params.id;
+
+    console.log(`Replacing products in walkin: ${walkinId}`);
+
+    const walkin = await Walkin.findById(walkinId);
+    if (!walkin) {
+      return res.status(404).json({
+        success: false,
+        message: "Walkin not found",
+      });
+    }
+
+    // Clear existing products
+    walkin.products = [];
+
+    // If no products provided, just clear and return
+    if (!products || products.length === 0) {
+      await walkin.save();
+      const updatedWalkin = await Walkin.findById(walkinId)
+        .populate("products.product");
+      
+      return res.json({
+        success: true,
+        message: "Products cleared",
+        data: updatedWalkin,
+      });
+    }
+
+    // Add new products
+    for (const item of products) {
+      const product = await Product.findById(item.productId);
+      if (!product) continue;
+
+      const quantity = item.quantity || 1;
+      const price = item.price || product.price || 0;
+
+      walkin.products.push({
+        product: product._id,
+        quantity: quantity,
+        price: price,
+        total: price * quantity,
+        stockDeducted: false,
+      });
+    }
+
+    // Recalculate totals
+    let productsTotal = 0;
+    walkin.products.forEach((p) => {
+      productsTotal += p.total || 0;
+    });
+    walkin.subtotal = (walkin.services?.reduce((sum, s) => sum + (s.price || 0), 0) || 0) + productsTotal;
+    walkin.totalAmount = Math.max(walkin.subtotal - (walkin.discount || 0), 0);
+    walkin.dueAmount = Math.max(walkin.totalAmount - (walkin.amountPaid || 0), 0);
+
+    walkin.updatedBy = req.user?._id || null;
+    await walkin.save();
+
+    // Return populated data
+    const updatedWalkin = await Walkin.findById(walkinId)
+      .populate("products.product");
+
+    res.json({
+      success: true,
+      message: `${walkin.products.length} product(s) saved`,
+      data: updatedWalkin,
+    });
+  } catch (error) {
+    console.error("Error replacing products:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// ================================================
 // 🆕 NEW FUNCTION: Update Walkin Status
 // ================================================
 exports.updateWalkinStatus = async (req, res) => {
@@ -379,6 +556,16 @@ exports.updateWalkinStatus = async (req, res) => {
 
       // 🔥 Release stock for all products that were deducted
       await releaseStockForWalkin(walkinId);
+      // 🔥 Release seats (set to Available)
+      await releaseSeatsForWalkin(walkinId);
+    }
+
+    // If status changed to completed, release seats (set to Available)
+    if (
+      status === "completed" &&
+      previousStatus !== "completed"
+    ) {
+      await releaseSeatsForWalkin(walkinId);
     }
 
     await walkin.save();
@@ -651,15 +838,8 @@ exports.createWalkin = async (req, res) => {
       });
     }
 
-    // ✅ USE PRE-CALCULATED TOTALS (Client side calculation)
-    const totals = calculatedTotals || {
-      subtotal: 0,
-      totalAmount: 0,
-      dueAmount: 0,
-    };
-
-    // ✅ PREPARE SIMPLE DATA
-    const servicesData = services.map((service) => ({
+    // ✅ PREPARE SIMPLE DATA (Allow empty arrays)
+    const servicesData = (services || []).map((service) => ({
       service: service.serviceId,
       pricing: service.pricingId || new mongoose.Types.ObjectId(),
       price: service.price || 0,
@@ -667,7 +847,7 @@ exports.createWalkin = async (req, res) => {
       staff: service.staffId || null,
     }));
 
-    const productsData = products.map((product) => ({
+    const productsData = (products || []).map((product) => ({
       product: product.productId,
       quantity: product.quantity || 1,
       price: product.price || 0,
@@ -675,7 +855,7 @@ exports.createWalkin = async (req, res) => {
       stockDeducted: false,
     }));
 
-    const seatsData = seats.map((seat) => ({
+    const seatsData = (seats || []).map((seat) => ({
       seat: seat.seatId,
       seatNumber: seat.seatNumber,
       seatType: seat.seatType,
@@ -685,12 +865,35 @@ exports.createWalkin = async (req, res) => {
       bookedAt: new Date(),
     }));
 
-    // ✅ DETERMINE STATUS
+    // ✅ CALCULATE TOTALS (No tax, simple: subtotal - discount)
+    let servicesTotal = 0;
+    servicesData.forEach((s) => {
+      servicesTotal += s.price || 0;
+    });
+
+    let productsTotal = 0;
+    productsData.forEach((p) => {
+      productsTotal += p.total || 0;
+    });
+
+    let seatsTotal = 0;
+    seatsData.forEach((s) => {
+      seatsTotal += s.total || 0;
+    });
+
+    const subtotal = servicesTotal + productsTotal + seatsTotal;
+    const discountAmount = Number(discount) || 0;
+    const totalAmount = Math.max(subtotal - discountAmount, 0);
+    const amountPaidValue = Number(amountPaid) || 0;
+    const dueAmount = Math.max(totalAmount - amountPaidValue, 0);
+
+    // ✅ DETERMINE STATUS (Draft-first workflow)
     let paymentStatus = "pending";
     let status = "draft";
 
-    if (amountPaid > 0) {
-      if (totals.dueAmount > 0) {
+    // Only change status if payment is made AND there are items
+    if (amountPaidValue > 0 && totalAmount > 0) {
+      if (dueAmount > 0) {
         paymentStatus = "partially_paid";
         status = "confirmed";
       } else {
@@ -699,7 +902,7 @@ exports.createWalkin = async (req, res) => {
       }
     }
 
-    // ✅ CREATE WALKIN
+    // ✅ CREATE WALKIN (Draft-first: empty services/products allowed)
     const walkinData = {
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
@@ -710,12 +913,12 @@ exports.createWalkin = async (req, res) => {
       services: servicesData,
       products: productsData,
       seats: seatsData,
-      subtotal: totals.subtotal || 0,
-      discount: Number(discount) || 0,
-      totalAmount: totals.totalAmount || 0,
+      subtotal: subtotal,
+      discount: discountAmount,
+      totalAmount: totalAmount,
       paymentMethod,
-      amountPaid: Number(amountPaid) || 0,
-      dueAmount: totals.dueAmount || 0,
+      amountPaid: amountPaidValue,
+      dueAmount: dueAmount,
       paymentStatus,
       status,
       createdBy: req.user?._id || null,
@@ -843,6 +1046,54 @@ async function bookSeats(walkinId) {
   }
 }
 
+// ================================================
+// 🆕 NEW HELPER: Release Seats for Walkin (Set to Available)
+// ================================================
+async function releaseSeatsForWalkin(walkinId) {
+  try {
+    console.log(`🔄 Releasing seats for walkin: ${walkinId}`);
+
+    const walkin = await Walkin.findById(walkinId);
+    if (!walkin) {
+      console.log("❌ Walkin not found");
+      return;
+    }
+
+    if (!walkin.seats || walkin.seats.length === 0) {
+      console.log("⏭️ No seats to release");
+      return;
+    }
+
+    const Seat = require("../models/Seat");
+
+    for (const seatItem of walkin.seats) {
+      if (!seatItem.seat) {
+        console.log("⏭️ Skipping seat item without seat ID");
+        continue;
+      }
+
+      const seat = await Seat.findById(seatItem.seat);
+      if (!seat) {
+        console.error(`❌ Seat not found: ${seatItem.seat}`);
+        continue;
+      }
+
+      // Set seat status to Available
+      seat.status = "Available";
+      await seat.save();
+
+      console.log(
+        `✅ Released seat: ${seat.seatNumber} (${seat.seatType}) - Status: Available`
+      );
+    }
+
+    console.log(`✅ Seat release completed for walkin: ${walkin.walkinNumber}`);
+  } catch (error) {
+    console.error("❌ Error releasing seats:", error);
+    throw error;
+  }
+}
+
 // Get all walkins
 exports.getAllWalkins = async (req, res) => {
   try {
@@ -887,6 +1138,7 @@ exports.getAllWalkins = async (req, res) => {
         .populate(
           "services.service services.category products.product createdBy"
         )
+        .populate("services.staff", "name employeeId employeeRole")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -963,6 +1215,7 @@ exports.updateWalkin = async (req, res) => {
       walkin.customerAddress = req.body.customerAddress;
     if (req.body.notes) walkin.notes = req.body.notes;
     if (req.body.branch) walkin.branch = req.body.branch;
+    if (req.body.discount !== undefined) walkin.discount = parseFloat(req.body.discount) || 0;
     if (req.body.paymentMethod) walkin.paymentMethod = req.body.paymentMethod;
     if (req.body.amountPaid !== undefined)
       walkin.amountPaid = req.body.amountPaid;
@@ -973,7 +1226,103 @@ exports.updateWalkin = async (req, res) => {
 
     walkin.updatedBy = req.user?._id || null;
 
-    // Recalculate totals
+    // Handle services replacement - SIMPLE AND DIRECT
+    if (req.body.services && Array.isArray(req.body.services) && req.body.services.length > 0) {
+      const Service = require("../models/Service");
+      const mongoose = require("mongoose");
+      
+      console.log(`\n🔄 Updating ${req.body.services.length} service(s) for walkin: ${walkin._id}`);
+      
+      // Clear existing services
+      walkin.services = [];
+      
+      // Process each service
+      for (const item of req.body.services) {
+        try {
+          // Get service from database
+          const service = await Service.findById(item.serviceId);
+          
+          if (!service) {
+            console.error(`❌ Service not found: ${item.serviceId}`);
+            // Add with provided data anyway
+            walkin.services.push({
+              service: item.serviceId,
+              pricing: item.pricingId || new mongoose.Types.ObjectId(),
+              price: item.price || 0,
+              duration: item.duration || 30,
+              category: null,
+              staff: item.staffId || null,
+            });
+            continue;
+          }
+
+          // Find matching pricing
+          let pricing = null;
+          if (item.pricingId && service.pricing) {
+            // Try to find by string comparison
+            for (const p of service.pricing) {
+              if (String(p._id) === String(item.pricingId)) {
+                pricing = p;
+                break;
+              }
+            }
+          }
+
+          // Use found pricing or first available or provided data
+          const price = pricing?.price ?? item.price ?? 0;
+          const duration = pricing?.durationMinutes ?? item.duration ?? 30;
+          const pricingId = pricing?._id ?? item.pricingId ?? new mongoose.Types.ObjectId();
+
+          // Add service
+          walkin.services.push({
+            service: service._id,
+            pricing: pricingId,
+            price: price,
+            duration: duration,
+            category: service.category || null,
+            staff: item.staffId || null,
+          });
+
+          console.log(`✅ Added: ${service.name} - ₹${price}`);
+        } catch (err) {
+          console.error(`❌ Error adding service ${item.serviceId}:`, err.message);
+          // Add with minimal data on error
+          walkin.services.push({
+            service: item.serviceId,
+            pricing: item.pricingId || new mongoose.Types.ObjectId(),
+            price: item.price || 0,
+            duration: item.duration || 30,
+            category: null,
+            staff: item.staffId || null,
+          });
+        }
+      }
+      
+      console.log(`✅ Total services: ${walkin.services.length}`);
+    }
+
+    // Handle products replacement if provided
+    if (req.body.products && Array.isArray(req.body.products)) {
+      const Product = require("../models/Product");
+      
+      walkin.products = [];
+      for (const productItem of req.body.products) {
+        const product = await Product.findById(productItem.productId);
+        if (product) {
+          const quantity = productItem.quantity || 1;
+          const price = productItem.price || product.price || 0;
+          walkin.products.push({
+            product: product._id,
+            quantity,
+            price,
+            total: price * quantity,
+            stockDeducted: false,
+          });
+        }
+      }
+    }
+
+    // Recalculate totals (No tax: subtotal - discount)
     let servicesTotal = 0;
     walkin.services.forEach((service) => {
       servicesTotal += service.price || 0;
@@ -984,9 +1333,14 @@ exports.updateWalkin = async (req, res) => {
       productsTotal += product.total || 0;
     });
 
-    walkin.subtotal = servicesTotal + productsTotal;
-    walkin.totalAmount = walkin.subtotal - (walkin.discount || 0);
-    walkin.dueAmount = walkin.totalAmount - (walkin.amountPaid || 0);
+    let seatsTotal = 0;
+    walkin.seats?.forEach((seat) => {
+      seatsTotal += seat.total || 0;
+    });
+
+    walkin.subtotal = servicesTotal + productsTotal + seatsTotal;
+    walkin.totalAmount = Math.max(walkin.subtotal - (walkin.discount || 0), 0);
+    walkin.dueAmount = Math.max(walkin.totalAmount - (walkin.amountPaid || 0), 0);
 
     if (walkin.dueAmount > 0) {
       walkin.paymentStatus = "partially_paid";
@@ -994,23 +1348,69 @@ exports.updateWalkin = async (req, res) => {
       walkin.paymentStatus = "paid";
     }
 
-    await walkin.save();
+    // Verify services before saving
+    console.log(`\n💾 Before save - Services count: ${walkin.services.length}`);
+    console.log(`💾 Before save - Services:`, walkin.services.map(s => ({
+      service: s.service?.toString() || s.service,
+      price: s.price,
+      duration: s.duration
+    })));
 
-    // Handle stock based on status change
+    // Save the walkin
+    await walkin.save();
+    console.log(`✅ Walkin saved successfully`);
+
+    // Verify services after saving
+    const savedWalkin = await Walkin.findById(walkin._id);
+    console.log(`\n💾 After save - Services count: ${savedWalkin.services.length}`);
+    if (savedWalkin.services.length !== walkin.services.length) {
+      console.error(`❌ CRITICAL: Services count changed after save! Before: ${walkin.services.length}, After: ${savedWalkin.services.length}`);
+    }
+
+    // Handle stock and seats based on status change
     if (previousStatus !== walkin.status) {
       if (walkin.status === "cancelled" && previousStatus !== "cancelled") {
         await releaseStockForWalkin(walkin._id);
+        await releaseSeatsForWalkin(walkin._id);
       } else if (
         (walkin.status === "confirmed" || walkin.status === "completed") &&
         previousStatus === "draft"
       ) {
         await deductStockForWalkin(walkin._id);
+      } else if (
+        walkin.status === "completed" &&
+        previousStatus !== "completed"
+      ) {
+        // Release seats when walk-in is completed
+        await releaseSeatsForWalkin(walkin._id);
       }
     }
 
+    // Populate services and products before returning
     const updatedWalkin = await Walkin.findById(walkin._id)
       .populate("services.service services.category products.product")
-      .populate("services.staff", "name employeeId");
+      .populate("services.staff", "name employeeId employeeRole");
+
+    console.log("\n📤 ========== RETURNING RESPONSE ==========");
+    console.log("📤 Updated walkin ID:", updatedWalkin._id);
+    console.log("📤 Services count in response:", updatedWalkin.services?.length || 0);
+    console.log("📤 Services details:", updatedWalkin.services?.map(s => ({
+      serviceId: s.service?._id?.toString() || s.service?.toString() || 'null',
+      serviceName: s.service?.name || 'Unknown',
+      pricingId: s.pricing?.toString() || 'null',
+      price: s.price,
+      duration: s.duration,
+      staff: s.staff?.name || 'None'
+    })));
+    
+    // CRITICAL CHECK: If services are missing, log detailed info
+    if ((updatedWalkin.services?.length || 0) === 0 && req.body.services && req.body.services.length > 0) {
+      console.error("\n❌❌❌ CRITICAL ERROR: Services were sent but not in response! ❌❌❌");
+      console.error("Request body services:", JSON.stringify(req.body.services, null, 2));
+      console.error("Walkin services before save:", walkin.services.length);
+      console.error("Walkin services after save (from DB):", updatedWalkin.services?.length || 0);
+    }
+    console.log("📤 ==========================================\n");
 
     res.json({
       success: true,
@@ -1813,14 +2213,22 @@ exports.completeUpdateWalkin = async (req, res) => {
       productsTotal += total;
     });
 
+    let seatsTotal = 0;
+    walkin.seats?.forEach((seat) => {
+      const total = parseFloat(seat.total) || 0;
+      console.log(`Seat total: ${total}`);
+      seatsTotal += total;
+    });
+
     console.log(`Services total: ${servicesTotal}`);
     console.log(`Products total: ${productsTotal}`);
+    console.log(`Seats total: ${seatsTotal}`);
 
     const discountAmount = parseFloat(walkin.discount) || 0;
 
-    walkin.subtotal = servicesTotal + productsTotal;
-    walkin.totalAmount = walkin.subtotal - discountAmount;
-    walkin.dueAmount = walkin.totalAmount - (walkin.amountPaid || 0);
+    walkin.subtotal = servicesTotal + productsTotal + seatsTotal;
+    walkin.totalAmount = Math.max(walkin.subtotal - discountAmount, 0);
+    walkin.dueAmount = Math.max(walkin.totalAmount - (walkin.amountPaid || 0), 0);
 
     console.log(
       `Final totals - Subtotal: ${walkin.subtotal}, Total: ${walkin.totalAmount}, Due: ${walkin.dueAmount}`
@@ -1851,12 +2259,21 @@ exports.completeUpdateWalkin = async (req, res) => {
       await deductStockForWalkin(walkinId);
     }
 
-    // If status changed to cancelled, release stock
+    // If status changed to cancelled, release stock and seats
     if (
       walkin.status === "cancelled" &&
       (previousStatus === "confirmed" || previousStatus === "completed")
     ) {
       await releaseStockForWalkin(walkinId);
+      await releaseSeatsForWalkin(walkinId);
+    }
+
+    // If status changed to completed, release seats (set to Available)
+    if (
+      walkin.status === "completed" &&
+      previousStatus !== "completed"
+    ) {
+      await releaseSeatsForWalkin(walkinId);
     }
 
     // Deduct stock for newly added products if walkin is already confirmed

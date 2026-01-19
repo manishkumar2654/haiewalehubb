@@ -123,21 +123,26 @@ const WalkinBooking = () => {
 
   const calculateTotals = () => {
     const servicesTotal = formData.selectedServices.reduce(
-      (sum, service) => sum + service.price,
+      (sum, service) => sum + (service.price || 0),
       0
     );
     const productsTotal = formData.selectedProducts.reduce(
-      (sum, product) => sum + product.total,
+      (sum, product) => sum + (product.total || 0),
       0
     );
-    const subtotal = servicesTotal + productsTotal;
+    const seatsTotal = formData.selectedSeats.reduce(
+      (sum, seat) => sum + (seat.total || 0),
+      0
+    );
+    const subtotal = servicesTotal + productsTotal + seatsTotal;
     const discountAmount = formData.discount || 0;
-    const total = subtotal - discountAmount;
-    const dueAmount = total - formData.amountPaid;
+    const total = Math.max(subtotal - discountAmount, 0);
+    const dueAmount = Math.max(total - (formData.amountPaid || 0), 0);
 
     return {
       servicesTotal,
       productsTotal,
+      seatsTotal,
       subtotal,
       discountAmount,
       total,
@@ -329,12 +334,26 @@ const WalkinBooking = () => {
             <div className="min-h-[400px]">{steps[currentStep].content}</div>
 
             <div className="flex justify-between mt-6 md:mt-8 pt-4 border-t">
-              <Button
-                disabled={currentStep === 0}
-                onClick={() => setCurrentStep(currentStep - 1)}
-              >
-                Previous
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  disabled={currentStep === 0}
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                >
+                  Previous
+                </Button>
+                {/* Allow creating draft from Customer Details step */}
+                {currentStep === 0 && (
+                  <Button
+                    onClick={handleSubmit}
+                    disabled={
+                      !formData.customerName || !formData.customerPhone || loading
+                    }
+                    loading={loading}
+                  >
+                    {loading ? "Creating..." : "Create Draft (Skip Services/Products)"}
+                  </Button>
+                )}
+              </div>
 
               {currentStep < steps.length - 1 ? (
                 <Button

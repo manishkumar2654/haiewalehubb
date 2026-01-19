@@ -1,11 +1,14 @@
 import React, { useState, useMemo } from "react";
 import {
-  Edit2,
   Download,
   QrCode,
   Search,
-  Plus,
   Calculator,
+  Scissors,
+  Users,
+  ShoppingBag,
+  X,
+  CheckCircle,
 } from "lucide-react";
 import {
   Input,
@@ -41,8 +44,9 @@ import {
 import * as XLSX from "xlsx";
 import api from "../../services/api";
 import QRModal from "./QRModal";
-import UpdateWalkinModal from "./UpdateWalkinModal";
-import CalculatePriceCell from "./CalculatePriceCell";
+import InlineServiceSelector from "./InlineServiceSelector";
+import InlineEmployeeSelector from "./InlineEmployeeSelector";
+import InlineProductSelector from "./InlineProductSelector";
 
 const { Option } = Select;
 
@@ -56,12 +60,21 @@ const WalkinList = ({
 }) => {
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedQrData, setSelectedQrData] = useState(null);
-  const [updateModalVisible, setUpdateModalVisible] = useState(false);
-  const [selectedWalkin, setSelectedWalkin] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+
+  // Inline editing modals
+  const [serviceModalVisible, setServiceModalVisible] = useState(false);
+  const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
+  const [productModalVisible, setProductModalVisible] = useState(false);
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [currentWalkin, setCurrentWalkin] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState("");
+
+  // State for managing selections per walk-in
+  const [walkinSelections, setWalkinSelections] = useState({});
 
   // Handle Download PDF
   const handleDownloadPDF = async (walkinId) => {
@@ -98,15 +111,25 @@ const WalkinList = ({
 
   // View Details Modal
   const showWalkinDetails = (walkin) => {
-    Modal.info({
+    const modal = Modal.info({
       title: (
-        <div className="flex items-center">
-          <EyeOutlined className="mr-2 text-blue-600" />
-          <span>Walk-in Details: {walkin.walkinNumber}</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <EyeOutlined className="mr-2 text-blue-600" />
+            <span>Walk-in Details: {walkin.walkinNumber}</span>
+          </div>
+          <Button
+            type="text"
+            icon={<X className="w-4 h-4 text-gray-500 hover:text-gray-700" />}
+            onClick={() => modal.destroy()}
+            className="!p-1 !h-auto !w-auto hover:bg-gray-100 rounded"
+            style={{ marginLeft: 'auto' }}
+          />
         </div>
       ),
       width: 800,
       icon: null,
+      closable: true, // Enable close button
       okButtonProps: { style: { display: "none" } }, // Hide default OK button
       content: (
         <div className="space-y-6 max-h-[70vh] overflow-y-auto">
@@ -330,17 +353,6 @@ const WalkinList = ({
             >
               Download PDF
             </Button>
-            <Button
-              type="primary"
-              onClick={() => {
-                setSelectedWalkin(walkin);
-                setUpdateModalVisible(true);
-                Modal.destroyAll();
-              }}
-              icon={<Edit2 className="w-4 h-4" />}
-            >
-              Edit Walk-in
-            </Button>
           </div>
         </div>
       ),
@@ -380,6 +392,299 @@ const WalkinList = ({
       `walkins_export_${new Date().toISOString().split("T")[0]}.xlsx`
     );
     message.success("Walkins exported to Excel successfully!");
+  };
+
+  // Handle service selection - Use separate replace endpoint
+  const handleServicesSelected = async (walkinId, selectedServices) => {
+    try {
+      // Prepare services payload
+      const servicesPayload = selectedServices.map((s) => ({
+        serviceId: String(s.serviceId),
+        pricingId: String(s.pricingId),
+        staffId: s.staffId ? String(s.staffId) : null,
+        price: Number(s.price) || 0,
+        duration: Number(s.duration) || 30,
+      }));
+
+      console.log("💾 Replacing services via separate endpoint:", servicesPayload);
+
+      // Use the replace-services endpoint
+      const response = await api.put(`/walkins/${walkinId}/replace-services`, {
+        services: servicesPayload,
+      });
+
+      console.log("✅ Services replaced:", response.data);
+
+      if (response.data?.data) {
+        const updatedWalkin = response.data.data;
+        setWalkinSelections((prev) => ({
+          ...prev,
+          [walkinId]: {
+            ...prev[walkinId],
+            services: updatedWalkin.services || [],
+          },
+        }));
+
+        message.success(`Services saved! ${updatedWalkin.services?.length || 0} service(s).`);
+      }
+
+      // Refresh walkins list
+      await fetchWalkins();
+    } catch (error) {
+      console.error("Failed to replace services:", error);
+      message.error(error.response?.data?.message || "Failed to save services");
+    }
+  };
+
+  // Handle employee selection
+  const handleEmployeesSelected = async (walkinId, selectedEmployees) => {
+    try {
+      // First, fetch current walk-in to get existing services
+      const walkinResponse = await api.get(`/walkins/${walkinId}`);
+      const currentWalkin = walkinResponse.data?.data || walkinResponse.data;
+      
+      if (!currentWalkin) {
+        message.error("Walk-in not found");
+        return;
+      }
+
+      // Get existing services
+      const existingServices = currentWalkin.services || [];
+
+      // Assign employees to services (first employee to first service, etc.)
+      const servicesWithEmployees = existingServices.map((service, index) => ({
+        serviceId: service.service?._id || service.service,
+        pricingId: service.pricing?._id || service.pricing,
+        staffId: selectedEmployees[index]?._id || service.staff?._id || service.staff || null,
+        price: service.price || 0,
+        duration: service.duration || 30,
+      }));
+
+      if (servicesWithEmployees.length > 0) {
+        const servicesPayload = servicesWithEmployees.map((s) => ({
+          serviceId: s.serviceId,
+          pricingId: s.pricingId,
+          staffId: s.staffId || null,
+          price: s.price,
+          duration: s.duration,
+        }));
+
+        const response = await api.put(`/walkins/${walkinId}`, {
+          services: servicesPayload,
+        });
+
+        // Fetch the updated walk-in from backend
+        try {
+          const updatedWalkinResponse = await api.get(`/walkins/${walkinId}`);
+          const updatedWalkin = updatedWalkinResponse.data?.data || updatedWalkinResponse.data;
+          
+          if (updatedWalkin) {
+            // Update local state with fetched data
+            setWalkinSelections((prev) => ({
+              ...prev,
+              [walkinId]: {
+                ...prev[walkinId],
+                employees: selectedEmployees,
+                services: updatedWalkin.services || [],
+              },
+            }));
+          }
+        } catch (fetchError) {
+          console.error("Failed to fetch updated walk-in:", fetchError);
+        }
+      } else {
+        // Just save employees for later use
+        setWalkinSelections((prev) => ({
+          ...prev,
+          [walkinId]: {
+            ...prev[walkinId],
+            employees: selectedEmployees,
+          },
+        }));
+      }
+
+      message.success("Employees assigned successfully!");
+      // Refresh walkins to get latest data
+      await fetchWalkins();
+    } catch (error) {
+      console.error("Failed to assign employees:", error);
+      message.error(error.response?.data?.message || "Failed to assign employees");
+    }
+  };
+
+  // Handle product selection - Use separate replace endpoint
+  const handleProductsSelected = async (walkinId, selectedProducts) => {
+    try {
+      // Prepare products payload
+      const productsPayload = selectedProducts.map((p) => ({
+        productId: p.productId,
+        quantity: Number(p.quantity) || 1,
+        price: Number(p.price) || 0,
+      }));
+
+      console.log("💾 Replacing products via separate endpoint:", productsPayload);
+
+      // Use the replace-products endpoint
+      const response = await api.put(`/walkins/${walkinId}/replace-products`, {
+        products: productsPayload,
+      });
+
+      console.log("✅ Products replaced:", response.data);
+
+      if (response.data?.data) {
+        const updatedWalkin = response.data.data;
+        setWalkinSelections((prev) => ({
+          ...prev,
+          [walkinId]: {
+            ...prev[walkinId],
+            products: updatedWalkin.products || [],
+          },
+        }));
+
+        message.success(`Products saved! ${updatedWalkin.products?.length || 0} product(s).`);
+      }
+
+      // Refresh walkins list
+      await fetchWalkins();
+    } catch (error) {
+      console.error("Failed to replace products:", error);
+      message.error(error.response?.data?.message || "Failed to save products");
+    }
+  };
+
+  // Handle status update
+  const handleUpdateStatus = (walkin) => {
+    setCurrentWalkin(walkin);
+    setSelectedStatus(walkin.status || "draft");
+    setStatusModalVisible(true);
+  };
+
+  // Save status update
+  const handleSaveStatus = async () => {
+    if (!currentWalkin) return;
+
+    const currentStatus = currentWalkin.status || "draft";
+    
+    if (selectedStatus === currentStatus) {
+      message.info("Status unchanged");
+      setStatusModalVisible(false);
+      return;
+    }
+
+    try {
+      const response = await api.put(`/walkins/${currentWalkin._id}/status`, {
+        status: selectedStatus,
+      });
+
+      if (response.data.success) {
+        message.success(`Status updated to ${selectedStatus.toUpperCase()}`);
+        setStatusModalVisible(false);
+        setCurrentWalkin(null);
+        await fetchWalkins();
+      } else {
+        message.error(response.data.message || "Failed to update status");
+      }
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      message.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  // Handle price calculation
+  const handleCalculatePrice = async (walkin) => {
+    try {
+      // Fetch the latest walk-in data from backend to ensure we have the most recent services/products
+      const response = await api.get(`/walkins/${walkin._id}`);
+      const latestWalkin = response.data?.data || response.data;
+
+      if (!latestWalkin) {
+        message.error("Failed to fetch walk-in data");
+        return;
+      }
+
+      console.log("Latest walk-in data for calculation:", latestWalkin);
+      console.log("Services:", latestWalkin.services);
+      console.log("Products:", latestWalkin.products);
+
+      // Calculate from fresh backend data
+      const servicesTotal = (latestWalkin.services || []).reduce(
+        (sum, s) => {
+          const price = s.price || (s.service?.pricing?.[0]?.price) || 0;
+          console.log(`Service: ${s.service?.name || 'Unknown'}, Price: ${price}`);
+          return sum + price;
+        },
+        0
+      );
+      const productsTotal = (latestWalkin.products || []).reduce(
+        (sum, p) => {
+          const total = p.total || (p.price || 0) * (p.quantity || 1);
+          console.log(`Product: ${p.product?.name || 'Unknown'}, Total: ${total}`);
+          return sum + total;
+        },
+        0
+      );
+
+      console.log("Calculated totals:", { servicesTotal, productsTotal });
+
+      const subtotal = servicesTotal + productsTotal;
+      const discount = latestWalkin.discount || 0;
+      const totalAmount = Math.max(subtotal - discount, 0);
+
+      // Show calculated price
+      Modal.confirm({
+        title: "Calculated Price",
+        content: (
+          <div className="space-y-2 py-4">
+            <div className="flex justify-between">
+              <span>Services Total:</span>
+              <span className="font-semibold">₹{servicesTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Products Total:</span>
+              <span className="font-semibold">₹{productsTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span>Subtotal:</span>
+              <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Discount:</span>
+              <span className="font-semibold text-red-600">
+                -₹{discount.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-bold">Total Amount:</span>
+              <span className="font-bold text-green-600 text-lg">
+                ₹{totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ),
+        okText: "Save to Walk-in",
+        cancelText: "Cancel",
+        onOk: async () => {
+          try {
+            // Update walk-in with calculated price
+            const updateResponse = await api.put(`/walkins/${walkin._id}`, {
+              subtotal,
+              totalAmount,
+              discount,
+            });
+
+            message.success("Price calculated and saved successfully!");
+            // Refresh walkins to show updated price
+            await fetchWalkins();
+          } catch (error) {
+            console.error("Failed to save price:", error);
+            message.error(error.response?.data?.message || "Failed to save calculated price");
+          }
+        },
+      });
+    } catch (error) {
+      console.error("Failed to calculate price:", error);
+      message.error("Failed to calculate price");
+    }
   };
 
   // Filter walkins
@@ -463,12 +768,102 @@ const WalkinList = ({
       },
     },
     {
-      title: "Calculated Price",
-      key: "calculatedPrice",
-      width: 200,
-      render: (_, record) => <CalculatePriceCell walkin={record} />,
+      title: "Total Amount",
+      key: "totalAmount",
+      width: 150,
+      render: (_, record) => (
+        <Tag color="green" className="font-bold">
+          ₹{record.totalAmount?.toFixed(2) || "0.00"}
+        </Tag>
+      ),
     },
+    {
+      title: "Manage",
+      key: "manage",
+      width: 400,
+      fixed: "right",
+      render: (_, record) => {
+        // Always use data from backend (record) - it's the source of truth
+        // walkinSelections is only for temporary state during editing
+        const services = record.services || [];
+        const products = record.products || [];
+        const hasSelections =
+          (Array.isArray(services) && services.length > 0) ||
+          (Array.isArray(products) && products.length > 0);
+        
+        // Get employee count from services (staff assigned)
+        const employeesCount = services.filter(s => s.staff).length;
 
+        return (
+          <Space size="small" wrap>
+            <Tooltip title="Select Services">
+              <Button
+                size="small"
+                type="default"
+                icon={<Scissors className="w-3 h-3" />}
+                onClick={() => {
+                  setCurrentWalkin(record);
+                  setServiceModalVisible(true);
+                }}
+              >
+                Services ({Array.isArray(services) ? services.length : 0})
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Select Employees">
+              <Button
+                size="small"
+                type="default"
+                icon={<Users className="w-3 h-3" />}
+                onClick={() => {
+                  setCurrentWalkin(record);
+                  setEmployeeModalVisible(true);
+                }}
+              >
+                Employees ({employeesCount})
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Select Products">
+              <Button
+                size="small"
+                type="default"
+                icon={<ShoppingBag className="w-3 h-3" />}
+                onClick={() => {
+                  setCurrentWalkin(record);
+                  setProductModalVisible(true);
+                }}
+              >
+                Products ({Array.isArray(products) ? products.length : 0})
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Calculate Price">
+              <Button
+                size="small"
+                type="primary"
+                icon={<Calculator className="w-3 h-3" />}
+                disabled={!hasSelections}
+                onClick={() => handleCalculatePrice(record)}
+              >
+                Calculate
+              </Button>
+            </Tooltip>
+
+            <Tooltip title="Update Status">
+              <Button
+                size="small"
+                type="default"
+                icon={<CheckCircle className="w-3 h-3" />}
+                onClick={() => handleUpdateStatus(record)}
+              >
+                Status
+              </Button>
+            </Tooltip>
+          </Space>
+        );
+      },
+    },
     {
       title: "Actions",
       key: "actions",
@@ -482,19 +877,6 @@ const WalkinList = ({
               type="default"
               icon={<EyeOutlined />}
               onClick={() => showWalkinDetails(record)}
-            />
-          </Tooltip>
-
-          {/* Edit Button */}
-          <Tooltip title="Edit Walk-in">
-            <Button
-              size="small"
-              type="primary"
-              icon={<Edit2 className="w-3 h-3" />}
-              onClick={() => {
-                setSelectedWalkin(record);
-                setUpdateModalVisible(true);
-              }}
             />
           </Tooltip>
 
@@ -640,21 +1022,105 @@ const WalkinList = ({
         />
       )}
 
-      {/* Update Walkin Modal */}
-      {selectedWalkin && (
-        <UpdateWalkinModal
-          visible={updateModalVisible}
+      {/* Inline Service Selector Modal */}
+      {currentWalkin && (
+        <InlineServiceSelector
+          visible={serviceModalVisible}
           onClose={() => {
-            setUpdateModalVisible(false);
-            setSelectedWalkin(null);
+            setServiceModalVisible(false);
+            setCurrentWalkin(null);
           }}
-          walkin={selectedWalkin}
-          branches={branches}
+          walkin={currentWalkin}
           services={services}
           categories={categories}
-          products={products}
-          fetchWalkins={fetchWalkins}
+          onServicesSelected={(selectedServices) =>
+            handleServicesSelected(currentWalkin._id, selectedServices)
+          }
         />
+      )}
+
+      {/* Inline Employee Selector Modal */}
+      {currentWalkin && (
+        <InlineEmployeeSelector
+          visible={employeeModalVisible}
+          onClose={() => {
+            setEmployeeModalVisible(false);
+            setCurrentWalkin(null);
+          }}
+          walkin={currentWalkin}
+          onEmployeesSelected={(selectedEmployees) =>
+            handleEmployeesSelected(currentWalkin._id, selectedEmployees)
+          }
+        />
+      )}
+
+      {/* Inline Product Selector Modal */}
+      {currentWalkin && (
+        <InlineProductSelector
+          visible={productModalVisible}
+          onClose={() => {
+            setProductModalVisible(false);
+            setCurrentWalkin(null);
+          }}
+          walkin={currentWalkin}
+          products={products}
+          onProductsSelected={(selectedProducts) =>
+            handleProductsSelected(currentWalkin._id, selectedProducts)
+          }
+        />
+      )}
+
+      {/* Status Update Modal */}
+      {currentWalkin && (
+        <Modal
+          title="Update Walk-in Status"
+          open={statusModalVisible}
+          onCancel={() => {
+            setStatusModalVisible(false);
+            setCurrentWalkin(null);
+            setSelectedStatus("");
+          }}
+          onOk={handleSaveStatus}
+          okText="Update Status"
+          cancelText="Cancel"
+          width={400}
+        >
+          <div className="py-4">
+            <div className="mb-4">
+              <span className="text-sm text-gray-600">Current Status: </span>
+              <Tag
+                color={
+                  currentWalkin.status === "completed"
+                    ? "green"
+                    : currentWalkin.status === "cancelled"
+                    ? "red"
+                    : currentWalkin.status === "confirmed"
+                    ? "blue"
+                    : currentWalkin.status === "in_progress"
+                    ? "orange"
+                    : "default"
+                }
+              >
+                {(currentWalkin.status || "draft").toUpperCase()}
+              </Tag>
+            </div>
+            <div className="mb-2">
+              <span className="text-sm font-medium">Select New Status:</span>
+            </div>
+            <Select
+              value={selectedStatus}
+              onChange={setSelectedStatus}
+              style={{ width: "100%" }}
+              size="large"
+            >
+              <Option value="draft">Draft</Option>
+              <Option value="confirmed">Confirmed</Option>
+              <Option value="in_progress">In Progress</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+          </div>
+        </Modal>
       )}
     </>
   );

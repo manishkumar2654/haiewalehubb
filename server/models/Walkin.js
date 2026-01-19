@@ -101,7 +101,7 @@ const walkinSchema = new mongoose.Schema(
     },
     totalAmount: {
       type: Number,
-      required: true,
+      default: 0,
     },
     paymentStatus: {
       type: String,
@@ -172,12 +172,12 @@ walkinSchema.pre("save", function (next) {
   this.products.forEach((product) => {
     productsTotal += product.total;
   });
-  let seatsTotal = 0; // ADD SEATS CALCULATION
+  let seatsTotal = 0;
   this.seats?.forEach((seat) => {
     seatsTotal += seat.total || 0;
   });
-  this.subtotal = servicesTotal + productsTotal;
-  this.totalAmount = this.subtotal - this.discount + this.tax;
+  this.subtotal = servicesTotal + productsTotal + seatsTotal;
+  this.totalAmount = Math.max(this.subtotal - (this.discount || 0), 0);
 
   next();
 });

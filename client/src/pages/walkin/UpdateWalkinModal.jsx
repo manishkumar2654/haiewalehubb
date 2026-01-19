@@ -57,7 +57,7 @@ const UpdateWalkinModal = ({
 
   // Initialize
   useEffect(() => {
-    if (walkin) {
+    if (walkin && visible) {
       form.setFieldsValue({
         customerName: walkin.customerName,
         customerPhone: walkin.customerPhone,
@@ -75,9 +75,24 @@ const UpdateWalkinModal = ({
       setNewProducts([]);
       setServicesToRemove([]);
       setProductsToRemove([]);
+      setActiveTab("1");
+      setLoading(false);
       fetchBranchStaff(walkin.branch);
     }
-  }, [walkin, form]);
+  }, [walkin, visible, form]);
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!visible) {
+      setNewServices([]);
+      setNewProducts([]);
+      setServicesToRemove([]);
+      setProductsToRemove([]);
+      setLoading(false);
+      setActiveTab("1");
+      form.resetFields();
+    }
+  }, [visible, form]);
 
   const fetchBranchStaff = async (branchName) => {
     try {
@@ -208,15 +223,30 @@ const UpdateWalkinModal = ({
 
       if (response.data.success) {
         message.success("Walkin updated successfully!");
-        fetchWalkins();
+        
+        // Close modal immediately for better UX
         onClose();
+        
+        // Reset form state
+        setNewServices([]);
+        setNewProducts([]);
+        setServicesToRemove([]);
+        setProductsToRemove([]);
+        setLoading(false);
+        
+        // Fetch updated walkins in background (don't await)
+        // This prevents blocking the UI and scroll issues
+        fetchWalkins().catch((err) => {
+          console.error("Error refreshing walkins list:", err);
+          // Don't show error to user as update was successful
+        });
       } else {
         message.error(response.data.message || "Update failed");
+        setLoading(false);
       }
     } catch (error) {
       console.error("❌ Update error:", error);
       message.error(error.response?.data?.message || "Failed to update walkin");
-    } finally {
       setLoading(false);
     }
   };
@@ -250,10 +280,12 @@ const UpdateWalkinModal = ({
         </div>
       }
       open={visible}
-      onCancel={onClose}
+      onCancel={loading ? undefined : onClose}
       width={1000}
+      maskClosable={!loading}
+      closable={!loading}
       footer={[
-        <Button key="cancel" onClick={onClose}>
+        <Button key="cancel" onClick={onClose} disabled={loading}>
           Cancel
         </Button>,
         <Button
@@ -261,6 +293,7 @@ const UpdateWalkinModal = ({
           type="primary"
           loading={loading}
           onClick={handleSubmit}
+          disabled={loading}
         >
           Update Walk-in
         </Button>,

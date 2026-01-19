@@ -191,20 +191,7 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
           />
         </div>
 
-        <div>
-          <label className="block font-[poppins] text-gray-700 mb-2">
-            <Mail className="w-4 h-4 inline mr-2" />
-            Email Address
-          </label>
-          <Input
-            value={formData.customerEmail}
-            onChange={(e) =>
-              setFormData({ ...formData, customerEmail: e.target.value })
-            }
-            placeholder="Enter email address"
-            size="large"
-          />
-        </div>
+        
 
         <div>
           <label className="block font-[poppins] text-gray-700 mb-2">

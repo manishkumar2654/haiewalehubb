@@ -70,10 +70,14 @@ const AdminEmployeeManagement = () => {
   };
   const fetchBranches = async () => {
     try {
-      const res = await api.get("admin/branches"); // ✅ Yeh API create karni padegi
-      setBranches(res.data);
+      // Use /admin/branches (baseURL already includes /api/v1)
+      const res = await api.get("/admin/branches");
+      // Handle response structure: { success: true, data: branches[] }
+      const branchesData = res.data?.data || res.data || [];
+      setBranches(Array.isArray(branchesData) ? branchesData : []);
     } catch (err) {
       console.error("Failed to fetch branches", err);
+      setBranches([]); // Ensure branches is always an array
     }
   };
 
@@ -288,8 +292,8 @@ const AdminEmployeeManagement = () => {
                           className="w-full bg-white rounded-lg border border-gray-300 px-4 py-2.5 pl-10 text-gray-700 appearance-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                         >
                           <option value="">All Locations</option>
-                          {branches.map((branch) => (
-                            <option key={branch._id} value={branch.name}>
+                          {Array.isArray(branches) && branches.map((branch) => (
+                            <option key={branch._id || branch.id} value={branch.name}>
                               {branch.name} {/* Gold, Diamond, Silver */}
                             </option>
                           ))}
@@ -532,8 +536,6 @@ const AdminEmployeeManagement = () => {
                             <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                           </div>
                         </div>
-                        // Line ~381 - Edit modal ke workingLocation field ko
-                        update karo
                         <div>
                           <label className="block mb-2 text-sm font-medium text-gray-700">
                             Working Location
@@ -546,10 +548,9 @@ const AdminEmployeeManagement = () => {
                               className="w-full bg-white rounded-lg border border-gray-300 px-4 py-2.5 pl-10 text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                             >
                               <option value="">Select Branch</option>
-                              {branches.map((branch) => (
-                                <option key={branch._id} value={branch.name}>
-                                  {branch.name} ({branch.address}){" "}
-                                  {/* Optional: address show karo */}
+                              {Array.isArray(branches) && branches.map((branch) => (
+                                <option key={branch._id || branch.id} value={branch.name}>
+                                  {branch.name} {branch.address ? `(${branch.address})` : ""}
                                 </option>
                               ))}
                             </select>
