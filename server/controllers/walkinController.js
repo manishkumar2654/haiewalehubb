@@ -607,6 +607,68 @@ exports.updateWalkinStatus = async (req, res) => {
 };
 
 // ================================================
+// 🆕 SIMPLE STATUS UPDATE (Status Only - Fast)
+// ================================================
+exports.updateWalkinStatusOnly = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const walkinId = req.params.id;
+
+    if (!status) {
+      return res.status(400).json({
+        success: false,
+        message: "Status is required",
+      });
+    }
+
+    // Validate status
+    const validStatuses = [
+      "draft",
+      "confirmed",
+      "in_progress",
+      "completed",
+      "cancelled",
+    ];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+      });
+    }
+
+    // Simple update - only status field (no stock, no PDF, no heavy operations)
+    const walkin = await Walkin.findByIdAndUpdate(
+      walkinId,
+      { 
+        status: status,
+        updatedBy: req.user?._id || null,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!walkin) {
+      return res.status(404).json({
+        success: false,
+        message: "Walkin not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Status updated successfully",
+      data: walkin,
+    });
+  } catch (error) {
+    console.error("Error updating status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update status: " + error.message,
+    });
+  }
+};
+
+// ================================================
 // 🆕 NEW HELPER: Deduct Stock for Walkin
 // ================================================
 async function deductStockForWalkin(walkinId) {
@@ -747,11 +809,11 @@ async function releaseStockForWalkin(walkinId) {
 // ================================================
 exports.updateWalkinPayment = async (req, res) => {
   try {
-    const { amountPaid, paymentMethod } = req.body;
+    const { amountPaid, paymentMethod, discount } = req.body;
     const walkinId = req.params.id;
 
     console.log(`Updating payment for walkin: ${walkinId}`);
-    console.log("Payment data:", { amountPaid, paymentMethod });
+    console.log("Payment data:", { amountPaid, paymentMethod, discount });
 
     const walkin = await Walkin.findById(walkinId);
 
@@ -765,9 +827,19 @@ exports.updateWalkinPayment = async (req, res) => {
     const previousAmountPaid = walkin.amountPaid || 0;
     const previousStatus = walkin.status;
 
-    walkin.amountPaid = amountPaid || walkin.amountPaid;
+    // Update discount if provided
+    if (discount !== undefined) {
+      walkin.discount = parseFloat(discount) || 0;
+    }
+
+    // Recalculate total amount with discount
+    const subtotal = walkin.subtotal || 0;
+    const discountAmount = walkin.discount || 0;
+    walkin.totalAmount = Math.max(subtotal - discountAmount, 0);
+
+    walkin.amountPaid = amountPaid !== undefined ? parseFloat(amountPaid) || 0 : walkin.amountPaid;
     walkin.paymentMethod = paymentMethod || walkin.paymentMethod;
-    walkin.dueAmount = walkin.totalAmount - walkin.amountPaid;
+    walkin.dueAmount = Math.max(walkin.totalAmount - walkin.amountPaid, 0);
 
     // Update payment status
     if (walkin.dueAmount > 0) {

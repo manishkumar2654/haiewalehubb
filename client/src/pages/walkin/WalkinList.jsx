@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   X,
   CheckCircle,
+  DollarSign,
 } from "lucide-react";
 import {
   Input,
@@ -24,6 +25,11 @@ import {
   Statistic,
   Space,
   Tooltip,
+  InputNumber,
+  DatePicker,
+  Collapse,
+  Divider,
+  Tabs,
 } from "antd";
 import {
   EyeOutlined,
@@ -40,6 +46,8 @@ import {
   CheckCircleOutlined,
   FilterOutlined,
   CalendarOutlined,
+  ClearOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
@@ -47,8 +55,12 @@ import QRModal from "./QRModal";
 import InlineServiceSelector from "./InlineServiceSelector";
 import InlineEmployeeSelector from "./InlineEmployeeSelector";
 import InlineProductSelector from "./InlineProductSelector";
+import AdvancedFilterPanel from "./AdvancedFilterPanel";
 
 const { Option } = Select;
+const { RangePicker } = DatePicker;
+const { Panel } = Collapse;
+const { TabPane } = Tabs;
 
 const WalkinList = ({
   walkins,
@@ -64,14 +76,32 @@ const WalkinList = ({
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
+  
+  // Advanced filter panel state
+  const [advancedFiltersVisible, setAdvancedFiltersVisible] = useState(false);
+  const [dateRange, setDateRange] = useState(null);
+  const [advancedStatusFilter, setAdvancedStatusFilter] = useState("all");
+  const [advancedBranchFilter, setAdvancedBranchFilter] = useState("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
+  const [minAmount, setMinAmount] = useState(null);
+  const [maxAmount, setMaxAmount] = useState(null);
+  const [customerNameFilter, setCustomerNameFilter] = useState("");
+  const [phoneFilter, setPhoneFilter] = useState("");
+  const [walkinNumberFilter, setWalkinNumberFilter] = useState("");
 
   // Inline editing modals
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [paymentModalVisible, setPaymentModalVisible] = useState(false);
   const [currentWalkin, setCurrentWalkin] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
+  const [discountValue, setDiscountValue] = useState(0);
+  const [activeTab, setActiveTab] = useState("1"); // "1" for All Walk-ins, "2" for Advanced Filters
 
   // State for managing selections per walk-in
   const [walkinSelections, setWalkinSelections] = useState({});
@@ -572,7 +602,8 @@ const WalkinList = ({
     }
 
     try {
-      const response = await api.put(`/walkins/${currentWalkin._id}/status`, {
+      // Use the fast status-only endpoint
+      const response = await api.patch(`/walkins/${currentWalkin._id}/status-only`, {
         status: selectedStatus,
       });
 
@@ -580,6 +611,7 @@ const WalkinList = ({
         message.success(`Status updated to ${selectedStatus.toUpperCase()}`);
         setStatusModalVisible(false);
         setCurrentWalkin(null);
+        setSelectedStatus("");
         await fetchWalkins();
       } else {
         message.error(response.data.message || "Failed to update status");
@@ -587,6 +619,76 @@ const WalkinList = ({
     } catch (error) {
       console.error("Failed to update status:", error);
       message.error(error.response?.data?.message || "Failed to update status");
+    }
+  };
+
+  // Handle payment update
+  const handleUpdatePayment = (walkin) => {
+    setCurrentWalkin(walkin);
+    setPaymentAmount(walkin.amountPaid || 0);
+    setPaymentMethod(walkin.paymentMethod || "cash");
+    setDiscountValue(walkin.discount || 0);
+    // Determine discount type based on existing discount
+    if (walkin.discount && walkin.subtotal) {
+      const percentage = (walkin.discount / walkin.subtotal) * 100;
+      if (percentage > 0 && percentage <= 100 && Math.abs(percentage - Math.round(percentage)) < 0.01) {
+        setDiscountType("percentage");
+      } else {
+        setDiscountType("amount");
+      }
+    } else {
+      setDiscountType("amount");
+    }
+    setPaymentModalVisible(true);
+  };
+
+  // Calculate discount amount based on type
+  const calculateDiscountAmount = () => {
+    if (!currentWalkin) return 0;
+    const subtotal = currentWalkin.subtotal || currentWalkin.totalAmount || 0;
+    if (discountType === "percentage") {
+      return (subtotal * (discountValue || 0)) / 100;
+    }
+    return discountValue || 0;
+  };
+
+  // Calculate total after discount
+  const calculateTotalAfterDiscount = () => {
+    if (!currentWalkin) return 0;
+    const subtotal = currentWalkin.subtotal || currentWalkin.totalAmount || 0;
+    const discount = calculateDiscountAmount();
+    return Math.max(subtotal - discount, 0);
+  };
+
+  // Save payment update
+  const handleSavePayment = async () => {
+    if (!currentWalkin) return;
+
+    try {
+      const discountAmount = calculateDiscountAmount();
+      const totalAfterDiscount = calculateTotalAfterDiscount();
+
+      const response = await api.patch(`/walkins/${currentWalkin._id}/payment`, {
+        amountPaid: parseFloat(paymentAmount) || 0,
+        paymentMethod: paymentMethod,
+        discount: discountAmount,
+      });
+
+      if (response.data.success) {
+        message.success("Payment updated successfully");
+        setPaymentModalVisible(false);
+        setCurrentWalkin(null);
+        setPaymentAmount(0);
+        setPaymentMethod("cash");
+        setDiscountValue(0);
+        setDiscountType("amount");
+        await fetchWalkins();
+      } else {
+        message.error(response.data.message || "Failed to update payment");
+      }
+    } catch (error) {
+      console.error("Failed to update payment:", error);
+      message.error(error.response?.data?.message || "Failed to update payment");
     }
   };
 
@@ -690,6 +792,64 @@ const WalkinList = ({
   // Filter walkins
   const filteredWalkins = useMemo(() => {
     return walkins.filter((walkin) => {
+      // If Advanced Filters tab is active, use advanced filters
+      if (activeTab === "2") {
+        // Date range filter
+        if (dateRange && dateRange[0] && dateRange[1]) {
+          const walkinDate = new Date(walkin.createdAt || walkin.walkinDate);
+          // Handle dayjs objects from Ant Design DatePicker
+          const startDate = dateRange[0].toDate ? dateRange[0].toDate() : new Date(dateRange[0]);
+          const endDate = dateRange[1].toDate ? dateRange[1].toDate() : new Date(dateRange[1]);
+          endDate.setHours(23, 59, 59, 999); // Include entire end date
+          if (walkinDate < startDate || walkinDate > endDate) {
+            return false;
+          }
+        }
+
+        // Advanced status filter
+        if (advancedStatusFilter !== "all" && walkin.status !== advancedStatusFilter) {
+          return false;
+        }
+
+        // Advanced branch filter
+        if (advancedBranchFilter !== "all" && walkin.branch !== advancedBranchFilter) {
+          return false;
+        }
+
+        // Payment status filter
+        if (paymentStatusFilter !== "all" && walkin.paymentStatus !== paymentStatusFilter) {
+          return false;
+        }
+
+        // Amount range filter
+        const totalAmount = walkin.totalAmount || 0;
+        if (minAmount !== null && totalAmount < minAmount) {
+          return false;
+        }
+        if (maxAmount !== null && totalAmount > maxAmount) {
+          return false;
+        }
+
+        // Customer name filter
+        if (customerNameFilter && !walkin.customerName?.toLowerCase().includes(customerNameFilter.toLowerCase())) {
+          return false;
+        }
+
+        // Phone filter
+        if (phoneFilter && !walkin.customerPhone?.includes(phoneFilter)) {
+          return false;
+        }
+
+        // Walk-in number filter
+        if (walkinNumberFilter && !walkin.walkinNumber?.toLowerCase().includes(walkinNumberFilter.toLowerCase())) {
+          return false;
+        }
+
+        // All advanced filters passed
+        return true;
+      }
+
+      // If All Walk-ins tab is active, use basic filters
       const matchesSearch =
         searchText === "" ||
         walkin.customerName.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -713,7 +873,52 @@ const WalkinList = ({
 
       return matchesSearch && matchesStatus && matchesBranch && matchesDate;
     });
-  }, [walkins, searchText, statusFilter, branchFilter, dateFilter]);
+  }, [
+    walkins,
+    activeTab,
+    searchText,
+    statusFilter,
+    branchFilter,
+    dateFilter,
+    dateRange,
+    advancedStatusFilter,
+    advancedBranchFilter,
+    paymentStatusFilter,
+    minAmount,
+    maxAmount,
+    customerNameFilter,
+    phoneFilter,
+    walkinNumberFilter,
+  ]);
+
+  // Clear all advanced filters
+  const clearAdvancedFilters = () => {
+    setDateRange(null);
+    setAdvancedStatusFilter("all");
+    setAdvancedBranchFilter("all");
+    setPaymentStatusFilter("all");
+    setMinAmount(null);
+    setMaxAmount(null);
+    setCustomerNameFilter("");
+    setPhoneFilter("");
+    setWalkinNumberFilter("");
+    message.info("Advanced filters cleared");
+  };
+
+  // Check if any advanced filter is active
+  const hasActiveAdvancedFilters = () => {
+    return (
+      (dateRange && dateRange[0] && dateRange[1]) ||
+      advancedStatusFilter !== "all" ||
+      advancedBranchFilter !== "all" ||
+      paymentStatusFilter !== "all" ||
+      minAmount !== null ||
+      maxAmount !== null ||
+      customerNameFilter !== "" ||
+      phoneFilter !== "" ||
+      walkinNumberFilter !== ""
+    );
+  };
 
   // Columns
   const columns = [
@@ -860,6 +1065,17 @@ const WalkinList = ({
                 Status
               </Button>
             </Tooltip>
+
+            <Tooltip title="Enter Payment Amount">
+              <Button
+                size="small"
+                type="default"
+                icon={<DollarSign className="w-3 h-3" />}
+                onClick={() => handleUpdatePayment(record)}
+              >
+                Payment
+              </Button>
+            </Tooltip>
           </Space>
         );
       },
@@ -904,110 +1120,199 @@ const WalkinList = ({
 
   return (
     <>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        <Input
-          placeholder="Search by name, walkin #, phone..."
-          prefix={<FilterOutlined />}
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          style={{ width: 300 }}
-        />
-
-        <Select
-          placeholder="Status"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          style={{ width: 150 }}
-        >
-          <Option value="all">All Status</Option>
-          <Option value="confirmed">Confirmed</Option>
-          <Option value="in_progress">In Progress</Option>
-          <Option value="completed">Completed</Option>
-          <Option value="cancelled">Cancelled</Option>
-        </Select>
-
-        <Select
-          placeholder="Branch"
-          value={branchFilter}
-          onChange={setBranchFilter}
-          style={{ width: 150 }}
-        >
-          <Option value="all">All Branches</Option>
-          {branches.map((branch) => (
-            <Option key={branch._id} value={branch.name}>
-              {branch.name}
-            </Option>
-          ))}
-        </Select>
-
-        <Select
-          placeholder="Date"
-          value={dateFilter}
-          onChange={setDateFilter}
-          style={{ width: 150 }}
-        >
-          <Option value="all">All Dates</Option>
-          <Option value="today">Today</Option>
-          <Option value="week">This Week</Option>
-        </Select>
-
-        <Button icon={<ReloadOutlined />} onClick={fetchWalkins}>
-          Refresh
-        </Button>
-
-        <Button
-          type="primary"
-          icon={<ExportOutlined />}
-          onClick={exportToExcel}
-        >
-          Export to Excel
-        </Button>
-      </div>
-
-      {/* Stats Row */}
-      <Row gutter={16} className="mb-6">
-        <Col span={6}>
-          <Card size="small">
-            <Statistic
-              title="Total Walk-ins"
-              value={filteredWalkins.length}
-              prefix={<TeamOutlined />}
+      <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
+        {/* TAB 1: ALL WALK-INS */}
+        <TabPane tab="All Walk-ins" key="1">
+          {/* Basic Filters */}
+          <div className="flex flex-wrap gap-4 mb-6">
+            <Input
+              placeholder="Search by name, walkin #, phone..."
+              prefix={<FilterOutlined />}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 300 }}
             />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic
-              title="In Progress"
-              value={
-                filteredWalkins.filter((w) => w.status === "in_progress").length
-              }
-              prefix={<ClockCircleOutlined />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic
-              title="Completed"
-              value={
-                filteredWalkins.filter((w) => w.status === "completed").length
-              }
-              prefix={<CheckCircleOutlined />}
-            />
-          </Card>
-        </Col>
-      </Row>
 
-      {/* Walkins Table */}
-      <Table
-        columns={columns}
-        dataSource={filteredWalkins}
-        rowKey="_id"
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1200 }}
-      />
+            <Select
+              placeholder="Status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: 150 }}
+            >
+              <Option value="all">All Status</Option>
+              <Option value="confirmed">Confirmed</Option>
+              <Option value="in_progress">In Progress</Option>
+              <Option value="completed">Completed</Option>
+              <Option value="cancelled">Cancelled</Option>
+            </Select>
+
+            <Select
+              placeholder="Branch"
+              value={branchFilter}
+              onChange={setBranchFilter}
+              style={{ width: 150 }}
+            >
+              <Option value="all">All Branches</Option>
+              {branches.map((branch) => (
+                <Option key={branch._id} value={branch.name}>
+                  {branch.name}
+                </Option>
+              ))}
+            </Select>
+
+            <Select
+              placeholder="Date"
+              value={dateFilter}
+              onChange={setDateFilter}
+              style={{ width: 150 }}
+            >
+              <Option value="all">All Dates</Option>
+              <Option value="today">Today</Option>
+              <Option value="week">This Week</Option>
+            </Select>
+
+            <Button icon={<ReloadOutlined />} onClick={fetchWalkins}>
+              Refresh
+            </Button>
+
+            <Button
+              type="primary"
+              icon={<ExportOutlined />}
+              onClick={exportToExcel}
+            >
+              Export to Excel
+            </Button>
+          </div>
+
+          {/* Stats Row */}
+          <Row gutter={16} className="mb-6">
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="Total Walk-ins"
+                  value={filteredWalkins.length}
+                  prefix={<TeamOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="In Progress"
+                  value={
+                    filteredWalkins.filter((w) => w.status === "in_progress").length
+                  }
+                  prefix={<ClockCircleOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="Completed"
+                  value={
+                    filteredWalkins.filter((w) => w.status === "completed").length
+                  }
+                  prefix={<CheckCircleOutlined />}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Walkins Table */}
+          <Table
+            columns={columns}
+            dataSource={filteredWalkins}
+            rowKey="_id"
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: 1200 }}
+          />
+        </TabPane>
+
+        {/* TAB 2: ADVANCED FILTERS */}
+        <TabPane tab="Advanced Filters" key="2">
+          <AdvancedFilterPanel
+            branches={branches}
+            filteredWalkins={filteredWalkins}
+            allWalkins={walkins}
+            dateRange={dateRange}
+            setDateRange={setDateRange}
+            advancedStatusFilter={advancedStatusFilter}
+            setAdvancedStatusFilter={setAdvancedStatusFilter}
+            advancedBranchFilter={advancedBranchFilter}
+            setAdvancedBranchFilter={setAdvancedBranchFilter}
+            paymentStatusFilter={paymentStatusFilter}
+            setPaymentStatusFilter={setPaymentStatusFilter}
+            minAmount={minAmount}
+            setMinAmount={setMinAmount}
+            maxAmount={maxAmount}
+            setMaxAmount={setMaxAmount}
+            customerNameFilter={customerNameFilter}
+            setCustomerNameFilter={setCustomerNameFilter}
+            phoneFilter={phoneFilter}
+            setPhoneFilter={setPhoneFilter}
+            walkinNumberFilter={walkinNumberFilter}
+            setWalkinNumberFilter={setWalkinNumberFilter}
+            hasActiveAdvancedFilters={hasActiveAdvancedFilters}
+            clearAdvancedFilters={clearAdvancedFilters}
+          />
+
+          {/* Stats Row for Advanced Filters Tab */}
+          <Row gutter={16} className="mb-6 mt-6">
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="Total Walk-ins"
+                  value={filteredWalkins.length}
+                  prefix={<TeamOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="In Progress"
+                  value={
+                    filteredWalkins.filter((w) => w.status === "in_progress").length
+                  }
+                  prefix={<ClockCircleOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="Completed"
+                  value={
+                    filteredWalkins.filter((w) => w.status === "completed").length
+                  }
+                  prefix={<CheckCircleOutlined />}
+                />
+              </Card>
+            </Col>
+            <Col span={6}>
+              <Card size="small">
+                <Statistic
+                  title="Total Amount"
+                  value={filteredWalkins.reduce((sum, w) => sum + (w.totalAmount || 0), 0)}
+                  prefix={<DollarOutlined />}
+                  precision={2}
+                  formatter={(value) => `₹${value}`}
+                />
+              </Card>
+            </Col>
+          </Row>
+
+          {/* Walkins Table for Advanced Filters Tab */}
+          <Table
+            columns={columns}
+            dataSource={filteredWalkins}
+            rowKey="_id"
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: 1200 }}
+          />
+        </TabPane>
+      </Tabs>
 
       {/* QR Modal */}
       {selectedQrData && (
@@ -1119,6 +1424,126 @@ const WalkinList = ({
               <Option value="completed">Completed</Option>
               <Option value="cancelled">Cancelled</Option>
             </Select>
+          </div>
+        </Modal>
+      )}
+
+      {/* Payment Update Modal */}
+      {currentWalkin && (
+        <Modal
+          title="Update Payment"
+          open={paymentModalVisible}
+          onCancel={() => {
+            setPaymentModalVisible(false);
+            setCurrentWalkin(null);
+            setPaymentAmount(0);
+            setPaymentMethod("cash");
+            setDiscountValue(0);
+            setDiscountType("amount");
+          }}
+          onOk={handleSavePayment}
+          okText="Update Payment"
+          cancelText="Cancel"
+          width={400}
+        >
+          <div className="py-4 space-y-4">
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Subtotal:</span>
+              </div>
+              <Tag color="blue" className="text-lg font-bold">
+                ₹{(currentWalkin.subtotal || currentWalkin.totalAmount || 0).toFixed(2)}
+              </Tag>
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Discount:</span>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <Select
+                  value={discountType}
+                  onChange={setDiscountType}
+                  style={{ width: "120px" }}
+                  size="large"
+                >
+                  <Option value="amount">Amount (₹)</Option>
+                  <Option value="percentage">Percentage (%)</Option>
+                </Select>
+                <InputNumber
+                  value={discountValue}
+                  onChange={(value) => setDiscountValue(value || 0)}
+                  style={{ flex: 1 }}
+                  size="large"
+                  min={0}
+                  max={discountType === "percentage" ? 100 : (currentWalkin.subtotal || currentWalkin.totalAmount || 0)}
+                  formatter={(value) => 
+                    discountType === "percentage" 
+                      ? `${value}%` 
+                      : `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value) => value.replace(/₹\s?|%|(,*)/g, "")}
+                  placeholder={discountType === "percentage" ? "Enter %" : "Enter amount"}
+                />
+              </div>
+              {discountValue > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Discount: ₹{calculateDiscountAmount().toFixed(2)}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Total After Discount:</span>
+              </div>
+              <Tag color="green" className="text-lg font-bold">
+                ₹{calculateTotalAfterDiscount().toFixed(2)}
+              </Tag>
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Amount Paid:</span>
+              </div>
+              <InputNumber
+                value={paymentAmount}
+                onChange={(value) => setPaymentAmount(value || 0)}
+                style={{ width: "100%" }}
+                size="large"
+                min={0}
+                max={calculateTotalAfterDiscount()}
+                formatter={(value) => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
+                placeholder="Enter amount paid"
+              />
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Payment Method:</span>
+              </div>
+              <Select
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+                style={{ width: "100%" }}
+                size="large"
+              >
+                <Option value="cash">Cash</Option>
+                <Option value="card">Card</Option>
+                <Option value="upi">UPI</Option>
+                <Option value="online">Online</Option>
+              </Select>
+            </div>
+
+            <div className="pt-2 border-t space-y-1">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Due Amount:</span>
+                <span className="font-semibold">
+                  ₹{Math.max(calculateTotalAfterDiscount() - (paymentAmount || 0), 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
         </Modal>
       )}

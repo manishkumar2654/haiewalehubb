@@ -16,6 +16,7 @@ router.post("/:id/add-products", walkinController.addProductsToWalkin);
 router.put("/:id/replace-services", walkinController.replaceServicesInWalkin);
 router.put("/:id/replace-products", walkinController.replaceProductsInWalkin);
 router.put("/:id/status", walkinController.updateWalkinStatus);
+router.patch("/:id/status-only", walkinController.updateWalkinStatusOnly);
 router.patch("/:id/payment", walkinController.updateWalkinPayment);
 
 // PDF & QR routes
