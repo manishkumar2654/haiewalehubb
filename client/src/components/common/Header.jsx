@@ -32,11 +32,9 @@ const Navbar = () => {
     // Admin always has access
     if (user.role === ROLES.ADMIN) return true;
 
-    // Employees with specific roles
+    // All employees have access
     if (user.role === ROLES.EMPLOYEE) {
-      return [EMPLOYEE_ROLES.MANAGER, EMPLOYEE_ROLES.RECEPTIONIST].includes(
-        user.employeeRole
-      );
+      return true;
     }
 
     return false;

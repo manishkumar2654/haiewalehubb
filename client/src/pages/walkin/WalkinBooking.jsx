@@ -341,28 +341,31 @@ const WalkinBooking = () => {
                 >
                   Previous
                 </Button>
-                {/* Allow creating draft from Customer Details step */}
+                {/* Only show Save as Draft button at Customer Details step */}
                 {currentStep === 0 && (
                   <Button
+                    type="primary"
                     onClick={handleSubmit}
                     disabled={
                       !formData.customerName || !formData.customerPhone || loading
                     }
                     loading={loading}
                   >
-                    {loading ? "Creating..." : "Create Draft (Skip Services/Products)"}
+                    {loading ? "Creating..." : "Save as Draft"}
                   </Button>
                 )}
               </div>
 
-              {currentStep < steps.length - 1 ? (
+              {/* Only show Next button if not at Customer Details step */}
+              {currentStep > 0 && currentStep < steps.length - 1 && (
                 <Button
                   type="primary"
                   onClick={() => setCurrentStep(currentStep + 1)}
                 >
                   Next
                 </Button>
-              ) : (
+              )}
+              {currentStep === steps.length - 1 && (
                 <Button
                   type="primary"
                   onClick={handleSubmit}

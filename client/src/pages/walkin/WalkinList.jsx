@@ -926,26 +926,40 @@ const WalkinList = ({
       title: "Walk-in #",
       dataIndex: "walkinNumber",
       key: "walkinNumber",
+      width: 120,
       sorter: (a, b) => a.walkinNumber.localeCompare(b.walkinNumber),
+      ellipsis: true,
+      render: (text) => <span style={{ whiteSpace: "nowrap" }}>{text}</span>,
     },
     {
       title: "Customer",
       key: "customer",
+      width: 200,
+      ellipsis: true,
       render: (_, record) => (
-        <div>
-          <div className="font-semibold">{record.customerName}</div>
-          <div className="text-sm text-gray-500">{record.customerPhone}</div>
-          <div className="text-xs text-gray-400">{record.branch}</div>
+        <div style={{ whiteSpace: "nowrap" }}>
+          <div className="font-semibold" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            {record.customerName}
+          </div>
+          <div className="text-sm text-gray-500" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            {record.customerPhone}
+          </div>
+          <div className="text-xs text-gray-400" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+            {record.branch}
+          </div>
         </div>
       ),
     },
     {
       title: "Services",
+      key: "services",
+      width: 250,
+      ellipsis: true,
       render: (_, record) => (
-        <div>
+        <div style={{ whiteSpace: "nowrap" }}>
           {record.services?.slice(0, 2).map((s, i) => (
-            <Tag key={i} color="blue" className="mb-1">
-              {s.service?.name?.slice(0, 20) || "Service"}
+            <Tag key={i} color="blue" className="mb-1" style={{ marginRight: 4 }}>
+              {s.service?.name || "Service"}
             </Tag>
           ))}
           {record.services?.length > 2 && (
@@ -960,6 +974,8 @@ const WalkinList = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
+      width: 120,
+      align: "center",
       render: (status) => {
         const statusConfig = {
           draft: { color: "default", text: "Draft" },
@@ -969,15 +985,40 @@ const WalkinList = ({
           cancelled: { color: "red", text: "Cancelled" },
         };
         const config = statusConfig[status] || { color: "gray", text: status };
-        return <Tag color={config.color}>{config.text}</Tag>;
+        return <Tag color={config.color} style={{ whiteSpace: "nowrap" }}>{config.text}</Tag>;
+      },
+    },
+    {
+      title: "Created By",
+      key: "createdBy",
+      width: 180,
+      ellipsis: true,
+      render: (_, record) => {
+        const createdBy = record.createdBy;
+        if (!createdBy) {
+          return <Tag color="default" style={{ whiteSpace: "nowrap" }}>System</Tag>;
+        }
+        return (
+          <div style={{ whiteSpace: "nowrap" }}>
+            <div className="font-medium" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+              {createdBy.name || "Unknown"}
+            </div>
+            {createdBy.email && (
+              <div className="text-xs text-gray-500" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                {createdBy.email}
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {
       title: "Total Amount",
       key: "totalAmount",
-      width: 150,
+      width: 130,
+      align: "right",
       render: (_, record) => (
-        <Tag color="green" className="font-bold">
+        <Tag color="green" className="font-bold" style={{ whiteSpace: "nowrap" }}>
           ₹{record.totalAmount?.toFixed(2) || "0.00"}
         </Tag>
       ),
@@ -985,7 +1026,7 @@ const WalkinList = ({
     {
       title: "Manage",
       key: "manage",
-      width: 400,
+      width: 500,
       fixed: "right",
       render: (_, record) => {
         // Always use data from backend (record) - it's the source of truth
@@ -1000,7 +1041,7 @@ const WalkinList = ({
         const employeesCount = services.filter(s => s.staff).length;
 
         return (
-          <Space size="small" wrap>
+          <Space size="small" wrap style={{ whiteSpace: "nowrap" }}>
             <Tooltip title="Select Services">
               <Button
                 size="small"
@@ -1010,6 +1051,7 @@ const WalkinList = ({
                   setCurrentWalkin(record);
                   setServiceModalVisible(true);
                 }}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Services ({Array.isArray(services) ? services.length : 0})
               </Button>
@@ -1024,6 +1066,7 @@ const WalkinList = ({
                   setCurrentWalkin(record);
                   setEmployeeModalVisible(true);
                 }}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Employees ({employeesCount})
               </Button>
@@ -1038,6 +1081,7 @@ const WalkinList = ({
                   setCurrentWalkin(record);
                   setProductModalVisible(true);
                 }}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Products ({Array.isArray(products) ? products.length : 0})
               </Button>
@@ -1050,6 +1094,7 @@ const WalkinList = ({
                 icon={<Calculator className="w-3 h-3" />}
                 disabled={!hasSelections}
                 onClick={() => handleCalculatePrice(record)}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Calculate
               </Button>
@@ -1061,6 +1106,7 @@ const WalkinList = ({
                 type="default"
                 icon={<CheckCircle className="w-3 h-3" />}
                 onClick={() => handleUpdateStatus(record)}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Status
               </Button>
@@ -1072,6 +1118,7 @@ const WalkinList = ({
                 type="default"
                 icon={<DollarSign className="w-3 h-3" />}
                 onClick={() => handleUpdatePayment(record)}
+                style={{ whiteSpace: "nowrap" }}
               >
                 Payment
               </Button>
@@ -1083,9 +1130,10 @@ const WalkinList = ({
     {
       title: "Actions",
       key: "actions",
-      width: 300,
+      width: 200,
+      fixed: "right",
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" style={{ whiteSpace: "nowrap" }}>
           {/* View Details Button - NOW WORKING */}
           <Tooltip title="View Details">
             <Button
@@ -1120,6 +1168,27 @@ const WalkinList = ({
 
   return (
     <>
+      <style>{`
+        .walkin-table .ant-table-cell {
+          white-space: nowrap;
+          padding: 12px 16px;
+        }
+        .walkin-table .ant-table-thead > tr > th {
+          white-space: nowrap;
+          font-weight: 600;
+          background-color: #fafafa;
+        }
+        .walkin-table .ant-table-tbody > tr > td {
+          white-space: nowrap;
+          vertical-align: middle;
+        }
+        .walkin-table .ant-space {
+          white-space: nowrap;
+        }
+        .walkin-table .ant-btn {
+          white-space: nowrap;
+        }
+      `}</style>
       <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
         {/* TAB 1: ALL WALK-INS */}
         <TabPane tab="All Walk-ins" key="1">
@@ -1224,8 +1293,12 @@ const WalkinList = ({
             columns={columns}
             dataSource={filteredWalkins}
             rowKey="_id"
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 1200 }}
+            pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} walk-ins` }}
+            scroll={{ x: 1600, y: "calc(100vh - 400px)" }}
+            size="middle"
+            bordered
+            style={{ whiteSpace: "nowrap" }}
+            className="walkin-table"
           />
         </TabPane>
 
@@ -1308,8 +1381,12 @@ const WalkinList = ({
             columns={columns}
             dataSource={filteredWalkins}
             rowKey="_id"
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 1200 }}
+            pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} walk-ins` }}
+            scroll={{ x: 1600, y: "calc(100vh - 400px)" }}
+            size="middle"
+            bordered
+            style={{ whiteSpace: "nowrap" }}
+            className="walkin-table"
           />
         </TabPane>
       </Tabs>

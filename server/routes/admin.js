@@ -5,15 +5,16 @@ const { generateEmployeeId } = require("../models/User");
 const AppError = require("../utils/appError");
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
 const statsController = require("../controllers/statsController");
-// GET /api/admin/users - Search users by email, shift, workingLocation
+// GET /api/admin/users - Search users by email, shift, workingLocation, role
 router.get("/users", protect, restrictTo("admin"), async (req, res, next) => {
   try {
-    const { email, shift, workingLocation } = req.query;
+    const { email, shift, workingLocation, role } = req.query;
     const filter = {};
     if (email) filter.email = { $regex: email, $options: "i" };
     if (shift) filter.shift = shift;
     if (workingLocation)
       filter.workingLocation = { $regex: workingLocation, $options: "i" };
+    if (role) filter.role = role; // Filter by role (e.g., "employee")
 
     const users = await User.find(filter).select("-password");
     res.status(200).json({ status: "success", users });

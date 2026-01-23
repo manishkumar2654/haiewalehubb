@@ -636,17 +636,8 @@ exports.updateWalkinStatusOnly = async (req, res) => {
       });
     }
 
-    // Simple update - only status field (no stock, no PDF, no heavy operations)
-    const walkin = await Walkin.findByIdAndUpdate(
-      walkinId,
-      { 
-        status: status,
-        updatedBy: req.user?._id || null,
-        updatedAt: new Date()
-      },
-      { new: true }
-    );
-
+    // Get walkin first to check previous status
+    const walkin = await Walkin.findById(walkinId);
     if (!walkin) {
       return res.status(404).json({
         success: false,
@@ -654,10 +645,31 @@ exports.updateWalkinStatusOnly = async (req, res) => {
       });
     }
 
+    const previousStatus = walkin.status;
+
+    // Update status
+    walkin.status = status;
+    walkin.updatedBy = req.user?._id || null;
+    await walkin.save();
+
+    // Release seats if status changed to completed or cancelled
+    if (status === "completed" && previousStatus !== "completed") {
+      console.log(`🔄 Status changed to completed, releasing seats for walkin: ${walkinId}`);
+      await releaseSeatsForWalkin(walkinId);
+    } else if (status === "cancelled" && previousStatus !== "cancelled") {
+      console.log(`🔄 Status changed to cancelled, releasing seats for walkin: ${walkinId}`);
+      await releaseSeatsForWalkin(walkinId);
+    }
+
+    // Get updated walkin with populated data
+    const updatedWalkin = await Walkin.findById(walkinId)
+      .populate("services.service products.product")
+      .populate("services.staff", "name employeeId");
+
     res.json({
       success: true,
-      message: "Status updated successfully",
-      data: walkin,
+      message: `Status updated to ${status}`,
+      data: updatedWalkin,
     });
   } catch (error) {
     console.error("Error updating status:", error);
@@ -993,7 +1005,7 @@ exports.createWalkin = async (req, res) => {
       dueAmount: dueAmount,
       paymentStatus,
       status,
-      createdBy: req.user?._id || null,
+      createdBy: req.body.createdBy || req.user?._id || null,
     };
 
     console.log("📝 Saving walkin to database...");
@@ -1210,6 +1222,7 @@ exports.getAllWalkins = async (req, res) => {
         .populate(
           "services.service services.category products.product createdBy"
         )
+        .populate("createdBy", "name email")
         .populate("services.staff", "name employeeId employeeRole")
         .sort({ createdAt: -1 })
         .skip(skip)

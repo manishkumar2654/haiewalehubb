@@ -96,6 +96,20 @@ const AdminRoute = ({ children }) => {
   return hasAccess ? children : <Navigate to="/unauthorized" replace />;
 };
 
+// EmployeeRoute - Allows all employees and admins (for search-appointment and walkin-booking)
+const EmployeeRoute = ({ children }) => {
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/unauthorized" replace />;
+
+  const role = user.role?.toLowerCase();
+
+  // Allow admin and all employees
+  const hasAccess = role === "admin" || role === "employee";
+
+  return hasAccess ? children : <Navigate to="/unauthorized" replace />;
+};
+
 const UnauthorizedPage = () => (
   <div className="min-h-screen flex items-center justify-center bg-gray-50">
     <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6 text-center">
@@ -199,9 +213,9 @@ function App() {
                   path="/search-appointment"
                   element={
                     <ProtectedRoute>
-                      <AdminRoute>
+                      <EmployeeRoute>
                         <AppointmentSearch />
-                      </AdminRoute>
+                      </EmployeeRoute>
                     </ProtectedRoute>
                   }
                 />
@@ -209,9 +223,9 @@ function App() {
                   path="/walkin-booking"
                   element={
                     <ProtectedRoute>
-                      <AdminRoute>
+                      <EmployeeRoute>
                         <WalkinBooking />
-                      </AdminRoute>
+                      </EmployeeRoute>
                     </ProtectedRoute>
                   }
                 />
