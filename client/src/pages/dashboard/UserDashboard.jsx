@@ -60,7 +60,7 @@ const UserProfileDashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/auth/login");
   };
 
   const getStatusIcon = (status) => {

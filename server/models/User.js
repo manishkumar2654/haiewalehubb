@@ -162,7 +162,7 @@ userSchema.methods.comparePassword = function (candidatePassword) {
 // Generate JWT auth token
 userSchema.methods.generateAuthToken = function () {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+    expiresIn: process.env.JWT_EXPIRES_IN || "30d",
   });
 };
 

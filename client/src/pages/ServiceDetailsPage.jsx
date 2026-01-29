@@ -67,7 +67,7 @@ const ServiceDetailsPage = () => {
   const handleAddToFavorites = async () => {
     if (!user) {
       addToast("Please login to add favorites", "info");
-      navigate("/login");
+      navigate("/auth/login");
       return;
     }
 
@@ -89,7 +89,7 @@ const ServiceDetailsPage = () => {
   const handleBookAppointment = () => {
     if (!user) {
       addToast("Please login to book an appointment", "info");
-      navigate("/login", { state: { returnTo: `/service/${id}` } });
+      navigate("/auth/login", { state: { returnTo: `/service/${id}` } });
       return;
     }
 

@@ -271,7 +271,7 @@ const ServiceManagement = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 sm:p-6 space-y-6 bg-white">
+    <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 space-y-6 bg-white">
       {/* Navigation Tabs */}
       <div className="flex border-b border-gray-200">
         {tabs.map((tab) => (
@@ -322,14 +322,14 @@ const ServiceManagement = () => {
 
         {/* Service Form */}
         {expandedForm && (
-          <Card className="border border-gray-200 shadow-sm">
+          <Card className="w-full border border-gray-200 shadow-sm overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-200 bg-gray-50">
               <h2 className="text-lg font-semibold text-gray-800">
                 {isEditing ? "Edit Service" : "Create New Service"}
               </h2>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-5 space-y-6">
+            <form onSubmit={handleSubmit} className="p-5 space-y-6 w-full min-w-0">
               {error && (
                 <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">
                   {error}
@@ -458,16 +458,16 @@ const ServiceManagement = () => {
                 </div>
 
                 {/* Pricing */}
-                <div className="space-y-4">
+                <div className="space-y-4 w-full">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Pricing Options
                     </label>
-                    <div className="space-y-3 border border-gray-200 rounded-md p-3">
+                    <div className="space-y-3 border border-gray-200 rounded-md p-3 w-full overflow-x-auto">
                       {formData.pricing.map((row, idx) => (
                         <div
                           key={idx}
-                          className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center"
+                          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[100px_120px_100px_1fr_auto] gap-2 items-center min-w-[320px] sm:min-w-0"
                         >
                           {/* Duration Minutes (Number) */}
                           <input
@@ -481,7 +481,7 @@ const ServiceManagement = () => {
                                 e.target.value
                               )
                             }
-                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                            className="w-full min-w-0 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
                             required
                           />
 
@@ -497,7 +497,7 @@ const ServiceManagement = () => {
                                 e.target.value
                               )
                             }
-                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                            className="w-full min-w-0 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
                             required
                           />
 
@@ -509,35 +509,38 @@ const ServiceManagement = () => {
                             onChange={(e) =>
                               handlePricingChange(idx, "price", e.target.value)
                             }
-                            className="border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                            className="w-full min-w-0 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
                             required
                           />
 
-                          {/* Label and Remove Button */}
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              placeholder="Label (optional)"
-                              value={row.label || ""}
-                              onChange={(e) =>
-                                handlePricingChange(
-                                  idx,
-                                  "label",
-                                  e.target.value
-                                )
-                              }
-                              className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
-                            />
-                            {formData.pricing.length > 1 && (
-                              <button
-                                type="button"
-                                onClick={() => removePricingRow(idx)}
-                                className="text-red-600 hover:text-red-700 p-1"
-                              >
-                                <X size={16} />
-                              </button>
-                            )}
-                          </div>
+                          {/* Label (optional) */}
+                          <input
+                            type="text"
+                            placeholder="Label (optional)"
+                            value={row.label || ""}
+                            onChange={(e) =>
+                              handlePricingChange(
+                                idx,
+                                "label",
+                                e.target.value
+                              )
+                            }
+                            className="w-full min-w-0 border border-gray-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                          />
+
+                          {/* Remove Button - own column so always visible */}
+                          {formData.pricing.length > 1 ? (
+                            <button
+                              type="button"
+                              onClick={() => removePricingRow(idx)}
+                              className="flex items-center justify-center gap-1 px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded border border-red-200 text-sm whitespace-nowrap shrink-0 w-full sm:w-auto"
+                            >
+                              <X size={14} />
+                              <span>Remove</span>
+                            </button>
+                          ) : (
+                            <span className="sm:col-span-1" />
+                          )}
                         </div>
                       ))}
                       <Button

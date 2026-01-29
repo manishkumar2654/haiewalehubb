@@ -51,7 +51,7 @@ const ProductDetails = () => {
   const addToCart = async () => {
     if (!user) {
       addToast("Please login to add items to cart", "error");
-      navigate("/login", { state: { from: `/products/${id}` } });
+      navigate("/auth/login", { state: { from: `/products/${id}` } });
       return;
     }
 
@@ -75,7 +75,7 @@ const ProductDetails = () => {
   const toggleWishlist = () => {
     if (!user) {
       addToast("Please login to add to wishlist", "error");
-      navigate("/login", { state: { from: `/products/${id}` } });
+      navigate("/auth/login", { state: { from: `/products/${id}` } });
       return;
     }
     setIsWishlisted(!isWishlisted);
