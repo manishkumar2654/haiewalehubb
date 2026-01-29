@@ -11,8 +11,8 @@ const logFormat = printf(({ timestamp, level, message, ...metadata }) => {
   return msg;
 });
 
-// Ensure logs directory exists (server/logs/)
-const logsDir = path.join(__dirname, "..", "logs");
+// Log directory: use LOG_DIR env (e.g. Railway volume /app/logs) or default server/logs
+const logsDir = process.env.LOG_DIR || path.join(__dirname, "..", "logs");
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
