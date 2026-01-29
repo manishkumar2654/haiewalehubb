@@ -5,6 +5,7 @@ const { auth } = require("../config/firebase");
 const crypto = require("crypto");
 const sendEmail = require("../utils/email");
 const logger = require("../utils/logger"); // Winston logger instance
+const { logAction } = require("../utils/actionLogger");
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -70,6 +71,11 @@ exports.register = async (req, res, next) => {
 
     const token = user.generateAuthToken();
     logger.debug(`REGISTER: JWT token generated for user ID: ${user._id}`);
+
+    logAction("AUTH", "REGISTER_SUCCESS", user.email, {
+      userId: String(user._id),
+      role: user.role,
+    });
 
     res.status(201).json({
       status: "success",
@@ -147,6 +153,7 @@ exports.login = async (req, res, next) => {
 
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
+      logAction("AUTH", "LOGIN_FAILED", email, { reason: "user_not_found" });
       logger.warn(`LOGIN: User not found for email: ${email}`);
       return res
         .status(401)
@@ -157,6 +164,7 @@ exports.login = async (req, res, next) => {
     logger.debug(`LOGIN: Password match for email ${email}: ${isMatch}`);
 
     if (!isMatch) {
+      logAction("AUTH", "LOGIN_FAILED", email, { reason: "wrong_password" });
       logger.warn(`LOGIN: Password mismatch for email: ${email}`);
       return res
         .status(401)
@@ -174,6 +182,10 @@ exports.login = async (req, res, next) => {
     const token = user.generateAuthToken();
     user.password = undefined;
 
+    logAction("AUTH", "LOGIN_SUCCESS", user.email, {
+      userId: String(user._id),
+      role: user.role,
+    });
     logger.info(`LOGIN: Login successful for user ID: ${user._id}`);
 
     res.status(200).json({
@@ -278,6 +290,10 @@ exports.googleLogin = async (req, res, next) => {
     }
 
     const token = user.generateAuthToken();
+    logAction("AUTH", "GOOGLE_LOGIN_SUCCESS", user.email, {
+      userId: String(user._id),
+      role: user.role,
+    });
     logger.debug(`[GOOGLE_LOGIN] Generated JWT token for user ID: ${user._id}`);
 
     res.status(200).json({
@@ -302,6 +318,7 @@ exports.googleLogin = async (req, res, next) => {
       },
     });
   } catch (err) {
+    logAction("AUTH", "GOOGLE_LOGIN_FAILED", req.body?.tokenId ? "token_provided" : "anonymous", { error: err.message });
     logAndNext("[GOOGLE_LOGIN] Error during Google OAuth login", err, next);
   }
 };

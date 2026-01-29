@@ -60,6 +60,10 @@ app.use(
   })
 );*/
 
+// Request logger: log every API call with user email when response finishes
+const requestLogger = require("./middlewares/requestLoggerMiddleware");
+app.use("/api/v1", requestLogger);
+
 // Import route modules
 const authRoutes = require("./routes/authRoutes");
 const billRoutes = require("./routes/billRoutes");

@@ -5,6 +5,7 @@ const { generateEmployeeId } = require("../models/User");
 const AppError = require("../utils/appError");
 const { protect, restrictTo } = require("../middlewares/authMiddleware");
 const statsController = require("../controllers/statsController");
+const { logAction } = require("../utils/actionLogger");
 // GET /api/admin/users - Search users by email, shift, workingLocation, role
 router.get("/users", protect, restrictTo("admin"), async (req, res, next) => {
   try {
@@ -56,6 +57,12 @@ router.put(
 
       await user.save();
 
+      logAction("USER", "ADMIN_UPDATE", req.user?.email || "anonymous", {
+        targetUserId: String(userId),
+        targetEmail: user.email,
+        role: user.role,
+      });
+
       res.status(200).json({ status: "success", user });
     } catch (err) {
       next(err);
@@ -74,7 +81,14 @@ router.delete(
       const user = await User.findById(userId);
       if (!user) return next(new AppError("User not found", 404));
 
+      const deletedEmail = user.email;
       await user.deleteOne();
+
+      logAction("USER", "ADMIN_DELETE", req.user?.email || "anonymous", {
+        targetUserId: String(userId),
+        targetEmail: deletedEmail,
+      });
+
       res
         .status(200)
         .json({ status: "success", message: "User deleted successfully" });

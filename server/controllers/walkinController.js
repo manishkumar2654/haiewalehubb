@@ -9,6 +9,7 @@ const fs = require("fs");
 const path = require("path");
 const Branch = require("../models/Branch");
 const Category = require("../models/Category");
+const { logAction } = require("../utils/actionLogger");
 
 // Ensure uploads directory exists
 const ensureUploadsDir = () => {
@@ -228,6 +229,12 @@ exports.replaceServicesInWalkin = async (req, res) => {
     const updatedWalkin = await Walkin.findById(walkinId)
       .populate("services.service services.category")
       .populate("services.staff", "name employeeId");
+
+    logAction("WALKIN", "REPLACE_SERVICES", req.user?.email || "anonymous", {
+      walkinId: String(walkinId),
+      walkinNumber: walkin.walkinNumber,
+      count: walkin.services.length,
+    });
 
     res.json({
       success: true,
@@ -471,6 +478,12 @@ exports.replaceProductsInWalkin = async (req, res) => {
     const updatedWalkin = await Walkin.findById(walkinId)
       .populate("products.product");
 
+    logAction("WALKIN", "REPLACE_PRODUCTS", req.user?.email || "anonymous", {
+      walkinId: String(walkinId),
+      walkinNumber: walkin.walkinNumber,
+      count: walkin.products.length,
+    });
+
     res.json({
       success: true,
       message: `${walkin.products.length} product(s) saved`,
@@ -587,6 +600,13 @@ exports.updateWalkinStatus = async (req, res) => {
       .populate("services.service products.product")
       .populate("services.staff", "name employeeId");
 
+    logAction("WALKIN", "UPDATE_STATUS", req.user?.email || "anonymous", {
+      walkinId: String(walkinId),
+      walkinNumber: walkin.walkinNumber,
+      previousStatus,
+      newStatus: status,
+    });
+
     res.json({
       success: true,
       message: `Status updated to ${status}`,
@@ -665,6 +685,13 @@ exports.updateWalkinStatusOnly = async (req, res) => {
     const updatedWalkin = await Walkin.findById(walkinId)
       .populate("services.service products.product")
       .populate("services.staff", "name employeeId");
+
+    logAction("WALKIN", "UPDATE_STATUS_ONLY", req.user?.email || "anonymous", {
+      walkinId: String(walkinId),
+      walkinNumber: walkin.walkinNumber,
+      previousStatus,
+      newStatus: status,
+    });
 
     res.json({
       success: true,
@@ -874,6 +901,13 @@ exports.updateWalkinPayment = async (req, res) => {
       await deductStockForWalkin(walkinId);
     }
 
+    logAction("WALKIN", "UPDATE_PAYMENT", req.user?.email || "anonymous", {
+      walkinId: String(walkinId),
+      walkinNumber: walkin.walkinNumber,
+      amountPaid: walkin.amountPaid,
+      paymentStatus: walkin.paymentStatus,
+    });
+
     res.json({
       success: true,
       message: "Payment updated successfully",
@@ -1011,6 +1045,14 @@ exports.createWalkin = async (req, res) => {
     console.log("📝 Saving walkin to database...");
     const walkin = await Walkin.create(walkinData);
     console.log("✅ Walkin saved:", walkin.walkinNumber);
+
+    const userEmail = req.user?.email || "anonymous";
+    logAction("WALKIN", "CREATE", userEmail, {
+      walkinId: String(walkin._id),
+      walkinNumber: walkin.walkinNumber,
+      customerName: walkin.customerName,
+      status: walkin.status,
+    });
 
     // ✅ IMMEDIATE RESPONSE (NO WAITING FOR PDF/QR)
     res.status(201).json({
@@ -1497,6 +1539,12 @@ exports.updateWalkin = async (req, res) => {
     }
     console.log("📤 ==========================================\n");
 
+    logAction("WALKIN", "UPDATE", req.user?.email || "anonymous", {
+      walkinId: String(walkin._id),
+      walkinNumber: walkin.walkinNumber,
+      status: walkin.status,
+    });
+
     res.json({
       success: true,
       message: "Walkin updated successfully",
@@ -1681,6 +1729,12 @@ exports.deleteWalkin = async (req, res) => {
 
     // Release stock when walkin is cancelled
     await releaseStockForWalkin(walkin._id);
+
+    logAction("WALKIN", "DELETE", req.user?.email || "anonymous", {
+      walkinId: String(walkin._id),
+      walkinNumber: walkin.walkinNumber,
+      customerName: walkin.customerName,
+    });
 
     res.json({
       success: true,
