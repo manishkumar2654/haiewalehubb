@@ -44,12 +44,12 @@ const orderLimiter = rateLimit({
 });
 
 // Serve static files with caching for 1 year
-app.use(
-  express.static(path.join(__dirname, "dist"), {
-    maxAge: "1y",
-    etag: true,
-  })
-);
+// app.use(
+//   express.static(path.join(__dirname, "dist"), {
+//     maxAge: "1y",
+//     etag: true,
+//   })
+// );
 
 // PDFs (optional caching, shorter period maybe)
 /*app.use(
