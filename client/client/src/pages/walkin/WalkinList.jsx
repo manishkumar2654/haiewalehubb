@@ -64,8 +64,7 @@ const WalkinList = ({
   products,
 }) => {
   const screens = useBreakpoint();
-  // ✅ more stable mobile detection (no desktop change)
-  const isMobile = screens.md === false;
+  const isMobile = !screens.md;
 
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedQrData, setSelectedQrData] = useState(null);
@@ -251,15 +250,13 @@ const WalkinList = ({
           />
         </div>
       ),
-      // ✅ mobile full width + better top + no overflow issues
       width: isMobile ? "100%" : 820,
-      style: isMobile ? { top: 10, padding: 0 } : undefined,
-      wrapClassName: isMobile ? "mobile-full-modal" : undefined,
+      style: isMobile ? { top: 12 } : undefined,
       icon: null,
       closable: true,
       okButtonProps: { style: { display: "none" } },
       content: (
-        <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="space-y-6 max-h-[70vh] overflow-y-auto">
           <Card size="small" title="Customer Information">
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -288,6 +285,7 @@ const WalkinList = ({
                 </div>
               </Col>
 
+              {/* ✅ Seat section added (as requested) */}
               <Col xs={24} md={8}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Seat</div>
@@ -481,7 +479,7 @@ const WalkinList = ({
       Phone: walkin.customerPhone,
       Email: walkin.customerEmail,
       Branch: walkin.branch,
-      Seat: getSeatLabel(walkin),
+      Seat: getSeatLabel(walkin), // ✅ Seat added
       Services: walkin.services?.map((s) => s.service?.name).join(", ") || "None",
       Products:
         walkin.products
@@ -507,7 +505,7 @@ const WalkinList = ({
     message.success("Walkins exported to Excel successfully!");
   };
 
-  // ===== Save handlers =====
+  // ===== Save handlers (same as your endpoints) =====
   const handleServicesSelected = async (walkinId, selectedServices) => {
     try {
       const servicesPayload = selectedServices.map((s) => ({
@@ -706,9 +704,6 @@ const WalkinList = ({
 
       Modal.confirm({
         title: "Calculated Price",
-        wrapClassName: isMobile ? "mobile-full-modal" : undefined,
-        width: isMobile ? "100%" : 520,
-        style: isMobile ? { top: 10 } : undefined,
         content: (
           <div className="space-y-2 py-4">
             <div className="flex justify-between">
@@ -867,7 +862,7 @@ const WalkinList = ({
     walkinNumberFilter,
   ]);
 
-  // ===== Quick Actions =====
+  // ===== Quick Actions (Premium) =====
   const QuickActions = ({ record }) => {
     const servicesArr = record.services || [];
     const productsArr = record.products || [];
@@ -920,6 +915,8 @@ const WalkinList = ({
                 {paymentMeta.text}
               </Tag>
             </div>
+
+            {/* ✅ Seat shown in dropdown header */}
             <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
               Seat: {getSeatLabel(record)}
             </div>
@@ -929,7 +926,11 @@ const WalkinList = ({
       },
       { type: "divider" },
 
-      { key: "m1", label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>, disabled: true },
+      {
+        key: "m1",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        disabled: true,
+      },
       {
         key: "services",
         label: (
@@ -979,7 +980,11 @@ const WalkinList = ({
 
       { type: "divider" },
 
-      { key: "m2", label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>, disabled: true },
+      {
+        key: "m2",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        disabled: true,
+      },
       {
         key: "status",
         label: (
@@ -1029,17 +1034,14 @@ const WalkinList = ({
     ];
 
     return (
-      <Space size="small" wrap className={isMobile ? "mobile-actions" : ""}>
+      <Space size="small" wrap>
         <Tooltip title={hasSelections ? "Calculate Price" : "Select services/products first"}>
           <Button
             size="small"
             type="primary"
             disabled={!hasSelections}
             icon={<Calculator className="w-4 h-4" />}
-            onClick={(e) => {
-              e?.stopPropagation?.();
-              openCalc();
-            }}
+            onClick={openCalc}
           >
             {isMobile ? "Calc" : "Calculate"}
           </Button>
@@ -1048,20 +1050,16 @@ const WalkinList = ({
         <Dropdown
           trigger={["click"]}
           placement="bottomRight"
-          overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
+          overlayStyle={{ width: isMobile ? 280 : 320 }}
           menu={{ items: menuItems }}
         >
-          <Button
-            size="small"
-            icon={<MoreOutlined />}
-            onClick={(e) => e?.stopPropagation?.()}
-          />
+          <Button size="small" icon={<MoreOutlined />} />
         </Dropdown>
       </Space>
     );
   };
 
-  // ===== Desktop Table Columns (unchanged) =====
+  // ===== Desktop Table Columns =====
   const columns = [
     {
       title: "Walk-in #",
@@ -1082,6 +1080,8 @@ const WalkinList = ({
         </div>
       ),
     },
+
+    // ✅ Seat column added
     {
       title: "Seat",
       key: "seat",
@@ -1093,6 +1093,7 @@ const WalkinList = ({
         </Tag>
       ),
     },
+
     {
       title: "Services",
       key: "services",
@@ -1191,31 +1192,33 @@ const WalkinList = ({
     return (
       <Card
         size="small"
-        className="mobile-walkin-card"
         style={{ borderRadius: 14 }}
         bodyStyle={{ padding: 12 }}
         onClick={() => showWalkinDetails(w)}
       >
+        {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ fontWeight: 800 }}>{w.walkinNumber}</div>
+          <div style={{ fontWeight: 700 }}>{w.walkinNumber}</div>
           <Tag color={statusMeta.color} style={{ margin: 0 }}>
             {statusMeta.text}
           </Tag>
         </div>
 
         <div style={{ marginTop: 6, color: "#374151" }}>
-          <div style={{ fontWeight: 700 }}>{w.customerName}</div>
+          <div style={{ fontWeight: 600 }}>{w.customerName}</div>
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             {w.customerPhone} • {w.branch}
           </div>
 
+          {/* ✅ Seat shown on mobile card */}
           <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
-            Seat: <span style={{ fontWeight: 700 }}>{getSeatLabel(w)}</span>
+            Seat: <span style={{ fontWeight: 600 }}>{getSeatLabel(w)}</span>
           </div>
         </div>
 
         <Divider style={{ margin: "10px 0" }} />
 
+        {/* Services/Products preview */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {(w.services || []).slice(0, 2).map((s, i) => (
             <Tag key={`s-${i}`} color="blue" style={{ margin: 0 }}>
@@ -1242,10 +1245,11 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
+        {/* Totals */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
-            <div style={{ fontWeight: 900, fontSize: 16 }}>
+            <div style={{ fontWeight: 800, fontSize: 16 }}>
               ₹{w.totalAmount?.toFixed(2) || "0.00"}
             </div>
           </div>
@@ -1254,24 +1258,29 @@ const WalkinList = ({
           </Tag>
         </div>
 
+        {/* Actions row */}
         <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
-          <div onClick={(e) => e.stopPropagation()}>
-            <QuickActions record={w} />
-          </div>
+          <QuickActions record={w} />
 
-          <Space onClick={(e) => e.stopPropagation()}>
+          <Space>
             <Tooltip title="PDF">
               <Button
                 size="small"
                 icon={<FilePdfOutlined />}
-                onClick={() => handleDownloadPDF(w._id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadPDF(w._id);
+                }}
               />
             </Tooltip>
             <Tooltip title="QR">
               <Button
                 size="small"
                 icon={<QrcodeOutlined />}
-                onClick={() => handleShowQR(w)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShowQR(w);
+                }}
               />
             </Tooltip>
           </Space>
@@ -1283,39 +1292,12 @@ const WalkinList = ({
   return (
     <>
       <style>{`
-        /* ✅ only mobile fixes (desktop unchanged) */
-        @media (max-width: 767px) {
-          .mobile-actions { width: 100%; justify-content: space-between; }
-          .mobile-walkin-card { width: 100%; }
-          .ant-list-item { padding: 6px 0 !important; }
-
-          /* Make Dropdown more touch friendly */
-          .ant-dropdown-menu-item {
-            padding: 12px 12px !important;
-            border-radius: 12px;
-            margin: 6px 6px;
-          }
-          .ant-dropdown-menu { border-radius: 14px !important; }
-
-          /* Full-screen modal polish */
-          .mobile-full-modal .ant-modal {
-            max-width: 100vw !important;
-            width: 100vw !important;
-            margin: 0 !important;
-            top: 0 !important;
-            padding-bottom: 0 !important;
-          }
-          .mobile-full-modal .ant-modal-content {
-            border-radius: 0 !important;
-            min-height: 100vh !important;
-          }
-          .mobile-full-modal .ant-modal-body {
-            max-height: calc(100vh - 110px) !important;
-            overflow: auto !important;
-          }
+        /* dropdown polish */
+        .ant-dropdown-menu-item {
+          padding: 10px 12px !important;
+          border-radius: 12px;
+          margin: 6px 6px;
         }
-
-        /* dropdown polish (safe on desktop too) */
         .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
 
@@ -1432,7 +1414,6 @@ const WalkinList = ({
       {/* MOBILE: Card/List view  |  DESKTOP: Table */}
       {isMobile ? (
         <List
-          split={false}
           dataSource={filteredWalkins}
           renderItem={(w) => (
             <List.Item style={{ padding: "8px 0" }}>
@@ -1462,7 +1443,6 @@ const WalkinList = ({
         open={advancedOpen}
         onClose={() => setAdvancedOpen(false)}
         width={isMobile ? "100%" : 440}
-        className={isMobile ? "mobile-drawer" : ""}
         extra={
           <Space>
             <Button onClick={clearAdvancedFilters} icon={<ClearOutlined />}>
@@ -1573,8 +1553,7 @@ const WalkinList = ({
           okText="Update Status"
           cancelText="Cancel"
           width={isMobile ? "100%" : 420}
-          style={isMobile ? { top: 10 } : undefined}
-          wrapClassName={isMobile ? "mobile-full-modal" : undefined}
+          style={isMobile ? { top: 12 } : undefined}
         >
           <div className="py-4">
             <div className="mb-4">
@@ -1621,8 +1600,7 @@ const WalkinList = ({
           okText="Update Payment"
           cancelText="Cancel"
           width={isMobile ? "100%" : 420}
-          style={isMobile ? { top: 10 } : undefined}
-          wrapClassName={isMobile ? "mobile-full-modal" : undefined}
+          style={isMobile ? { top: 12 } : undefined}
         >
           <div className="py-4 space-y-4">
             <div>
