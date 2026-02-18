@@ -281,13 +281,13 @@ const ServicesSection = () => {
 
         {/* Bottom CTA */}
         <div className="text-center mt-10">
-          <Link to="/appointment">
+          {/* <Link to="/appointment">
             <button className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-rose-700 to-amber-600 text-white font-[poppins] text-sm rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:from-rose-600 hover:to-amber-500">
               <Star className="h-4 w-4" />
               View All Services
               <Star className="h-4 w-4" />
             </button>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </section>

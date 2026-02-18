@@ -475,13 +475,13 @@ const Navbar = () => {
                   Home
                 </Link>
 
-                <Link
+                {/* <Link
                   to="/appointment"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-base font-medium text-rose-900 hover:bg-rose-50 rounded-lg transition-colors"
                 >
                   Appointment
-                </Link>
+                </Link> */}
 
                 {/* <Link
                   to="/store"

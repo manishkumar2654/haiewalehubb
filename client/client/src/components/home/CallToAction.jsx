@@ -12,11 +12,11 @@ const CallToAction = () => {
           our premium services.
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <Link to="/appointment">
+          {/* <Link to="/appointment">
             <button className="bg-rose-950 hover:bg-rose-900 text-white px-8 py-3 rounded-full font-medium transition-colors shadow-lg">
               Book Now
             </button>
-          </Link>
+          </Link> */}
         </div>
       </div>
     </section>

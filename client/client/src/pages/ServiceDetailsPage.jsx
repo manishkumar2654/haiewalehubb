@@ -170,13 +170,13 @@ const ServiceDetailsPage = () => {
       <div className="max-w-6xl mx-auto">
         {/* Navigation */}
         <div className="mb-6">
-          <Link
+          {/* <Link
             to="/appointment"
             className="inline-flex items-center text-rose-700 hover:text-rose-800 font-[poppins] font-medium transition-colors"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             Back
-          </Link>
+          </Link> */}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -74,12 +74,12 @@ const BeautyMeetsNature = () => {
 
             {/* CTA Button */}
             <div className="mt-8 sm:mt-12">
-              <Link to="/appointment">
+              {/* <Link to="/appointment">
                 {" "}
                 <button className="px-8 sm:px-10 py-3 sm:py-4 text-white font-medium rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-[length:300%_300%] bg-gradient-to-r from-rose-800 via-stone-400 to-rose-800 animate-gradient-flow">
                   Discover Our Treatments
                 </button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

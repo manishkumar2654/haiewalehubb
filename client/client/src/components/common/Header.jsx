@@ -242,12 +242,12 @@ const Navbar = () => {
                 Home
               </Link>
 
-              <Link
+              {/* <Link
                 to="/appointment"
                 className="px-4 py-2 text-sm font-[poppins] font-medium text-rose-900 hover:bg-rose-50 hover:text-rose-700 rounded-lg transition-all duration-300"
               >
                 Appointment
-              </Link>
+              </Link> */}
 
               {/* <Link
                 to="/store"
@@ -472,14 +472,14 @@ const Navbar = () => {
                 >
                   Home
                 </Link>
-
+{/* 
                 <Link
                   to="/appointment"
                   onClick={() => setMenuOpen(false)}
                   className="block px-4 py-3 text-base font-medium text-rose-900 hover:bg-rose-50 rounded-lg transition-colors"
                 >
                   Appointment
-                </Link>
+                </Link> */}
 
                 {/* <Link
                   to="/store"
