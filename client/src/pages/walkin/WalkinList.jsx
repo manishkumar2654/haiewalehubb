@@ -1,14 +1,11 @@
 import React, { useState, useMemo } from "react";
 import {
   Download,
-  QrCode,
-  Search,
   Calculator,
   Scissors,
   Users,
   ShoppingBag,
   X,
-  CheckCircle,
   DollarSign,
 } from "lucide-react";
 import {
@@ -26,16 +23,14 @@ import {
   Space,
   Tooltip,
   InputNumber,
-  DatePicker,
-  Collapse,
+  Drawer,
+  Dropdown,
+  Grid,
+  List,
   Divider,
-  Tabs,
 } from "antd";
 import {
   EyeOutlined,
-  SettingOutlined,
-  CustomerServiceOutlined,
-  ShoppingCartOutlined,
   FilePdfOutlined,
   QrcodeOutlined,
   ReloadOutlined,
@@ -45,9 +40,9 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
   FilterOutlined,
-  CalendarOutlined,
   ClearOutlined,
   SearchOutlined,
+  MoreOutlined,
 } from "@ant-design/icons";
 import * as XLSX from "xlsx";
 import api from "../../services/api";
@@ -58,9 +53,7 @@ import InlineProductSelector from "./InlineProductSelector";
 import AdvancedFilterPanel from "./AdvancedFilterPanel";
 
 const { Option } = Select;
-const { RangePicker } = DatePicker;
-const { Panel } = Collapse;
-const { TabPane } = Tabs;
+const { useBreakpoint } = Grid;
 
 const WalkinList = ({
   walkins,
@@ -70,15 +63,20 @@ const WalkinList = ({
   categories,
   products,
 }) => {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
+
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedQrData, setSelectedQrData] = useState(null);
+
+  // Basic filters
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [branchFilter, setBranchFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
-  
-  // Advanced filter panel state
-  const [advancedFiltersVisible, setAdvancedFiltersVisible] = useState(false);
+
+  // Advanced filters (Drawer)
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const [dateRange, setDateRange] = useState(null);
   const [advancedStatusFilter, setAdvancedStatusFilter] = useState("all");
   const [advancedBranchFilter, setAdvancedBranchFilter] = useState("all");
@@ -89,30 +87,127 @@ const WalkinList = ({
   const [phoneFilter, setPhoneFilter] = useState("");
   const [walkinNumberFilter, setWalkinNumberFilter] = useState("");
 
-  // Inline editing modals
+  // Modals
   const [serviceModalVisible, setServiceModalVisible] = useState(false);
   const [employeeModalVisible, setEmployeeModalVisible] = useState(false);
   const [productModalVisible, setProductModalVisible] = useState(false);
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+
   const [currentWalkin, setCurrentWalkin] = useState(null);
+
+  // Status/payment states
   const [selectedStatus, setSelectedStatus] = useState("");
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [discountType, setDiscountType] = useState("amount"); // "amount" or "percentage"
   const [discountValue, setDiscountValue] = useState(0);
-  const [activeTab, setActiveTab] = useState("1"); // "1" for All Walk-ins, "2" for Advanced Filters
 
-  // State for managing selections per walk-in
-  const [walkinSelections, setWalkinSelections] = useState({});
+  // ===== Helpers =====
+  const clearBasicFilters = () => {
+    setSearchText("");
+    setStatusFilter("all");
+    setBranchFilter("all");
+    setDateFilter("all");
+  };
 
-  // Handle Download PDF
+  const clearAdvancedFilters = () => {
+    setDateRange(null);
+    setAdvancedStatusFilter("all");
+    setAdvancedBranchFilter("all");
+    setPaymentStatusFilter("all");
+    setMinAmount(null);
+    setMaxAmount(null);
+    setCustomerNameFilter("");
+    setPhoneFilter("");
+    setWalkinNumberFilter("");
+    message.info("Advanced filters cleared");
+  };
+
+  const hasActiveAdvancedFilters = () => {
+    return (
+      (dateRange && dateRange[0] && dateRange[1]) ||
+      advancedStatusFilter !== "all" ||
+      advancedBranchFilter !== "all" ||
+      paymentStatusFilter !== "all" ||
+      minAmount !== null ||
+      maxAmount !== null ||
+      customerNameFilter !== "" ||
+      phoneFilter !== "" ||
+      walkinNumberFilter !== ""
+    );
+  };
+
+  const getStatusTag = (status) => {
+    const map = {
+      draft: { color: "default", text: "Draft" },
+      confirmed: { color: "blue", text: "Confirmed" },
+      in_progress: { color: "orange", text: "In Progress" },
+      completed: { color: "green", text: "Completed" },
+      cancelled: { color: "red", text: "Cancelled" },
+    };
+    return map[status] || { color: "default", text: status || "N/A" };
+  };
+
+  const getPaymentTag = (paymentStatus) => {
+    return {
+      color:
+        paymentStatus === "paid"
+          ? "green"
+          : paymentStatus === "partially_paid"
+          ? "orange"
+          : "red",
+      text: (paymentStatus || "unpaid").toUpperCase(),
+    };
+  };
+
+  // ✅ Seat helper (supports multiple backend shapes)
+  const getSeatLabel = (walkin) => {
+    if (!walkin) return "N/A";
+
+    if (walkin.seatNumber) return String(walkin.seatNumber);
+    if (walkin.seatName) return String(walkin.seatName);
+    if (walkin.seatLabel) return String(walkin.seatLabel);
+
+    if (walkin.seat) {
+      if (typeof walkin.seat === "string") return walkin.seat;
+      return (
+        walkin.seat.seatNumber ||
+        walkin.seat.number ||
+        walkin.seat.name ||
+        walkin.seat.label ||
+        "N/A"
+      );
+    }
+
+    const seatsArr =
+      walkin.selectedSeats ||
+      walkin.seats ||
+      walkin.seatBookings ||
+      walkin.seatBooking ||
+      [];
+
+    if (Array.isArray(seatsArr) && seatsArr.length) {
+      const labels = seatsArr
+        .map((s) => {
+          if (!s) return null;
+          if (typeof s === "string") return s;
+          return s.seatNumber || s.number || s.name || s.label || null;
+        })
+        .filter(Boolean);
+
+      return labels.length ? labels.join(", ") : "N/A";
+    }
+
+    return "N/A";
+  };
+
+  // ===== Actions =====
   const handleDownloadPDF = async (walkinId) => {
     try {
       const res = await api.get(`/walkins/${walkinId}/pdf`, {
         responseType: "blob",
       });
-
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -121,12 +216,11 @@ const WalkinList = ({
       link.click();
       link.remove();
       message.success("PDF downloaded successfully!");
-    } catch (error) {
+    } catch {
       message.error("Failed to download PDF");
     }
   };
 
-  // Handle Show QR
   const handleShowQR = (walkin) => {
     const qrData = {
       walkinId: walkin._id,
@@ -139,7 +233,6 @@ const WalkinList = ({
     setQrModalVisible(true);
   };
 
-  // View Details Modal
   const showWalkinDetails = (walkin) => {
     const modal = Modal.info({
       title: (
@@ -153,20 +246,20 @@ const WalkinList = ({
             icon={<X className="w-4 h-4 text-gray-500 hover:text-gray-700" />}
             onClick={() => modal.destroy()}
             className="!p-1 !h-auto !w-auto hover:bg-gray-100 rounded"
-            style={{ marginLeft: 'auto' }}
+            style={{ marginLeft: "auto" }}
           />
         </div>
       ),
-      width: 800,
+      width: isMobile ? "100%" : 820,
+      style: isMobile ? { top: 12 } : undefined,
       icon: null,
-      closable: true, // Enable close button
-      okButtonProps: { style: { display: "none" } }, // Hide default OK button
+      closable: true,
+      okButtonProps: { style: { display: "none" } },
       content: (
         <div className="space-y-6 max-h-[70vh] overflow-y-auto">
-          {/* Basic Info */}
           <Card size="small" title="Customer Information">
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Customer Name</div>
                   <div className="font-semibold text-lg">
@@ -174,7 +267,7 @@ const WalkinList = ({
                   </div>
                 </div>
               </Col>
-              <Col span={12}>
+              <Col xs={24} md={12}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Phone Number</div>
                   <div className="font-semibold text-lg">
@@ -183,14 +276,24 @@ const WalkinList = ({
                 </div>
               </Col>
             </Row>
+
             <Row gutter={16}>
-              <Col span={12}>
+              <Col xs={24} md={8}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Branch</div>
                   <div className="font-semibold">{walkin.branch}</div>
                 </div>
               </Col>
-              <Col span={12}>
+
+              {/* ✅ Seat section added (as requested) */}
+              <Col xs={24} md={8}>
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600">Seat</div>
+                  <div className="font-semibold">{getSeatLabel(walkin)}</div>
+                </div>
+              </Col>
+
+              <Col xs={24} md={8}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Status</div>
                   <Tag
@@ -212,12 +315,14 @@ const WalkinList = ({
                 </div>
               </Col>
             </Row>
+
             {walkin.customerEmail && (
               <div className="mb-3">
                 <div className="text-sm text-gray-600">Email</div>
                 <div className="font-semibold">{walkin.customerEmail}</div>
               </div>
             )}
+
             {walkin.customerAddress && (
               <div>
                 <div className="text-sm text-gray-600">Address</div>
@@ -226,8 +331,7 @@ const WalkinList = ({
             )}
           </Card>
 
-          {/* Services Section */}
-          {walkin.services && walkin.services.length > 0 && (
+          {walkin.services?.length > 0 && (
             <Card size="small" title={`Services (${walkin.services.length})`}>
               <div className="space-y-2">
                 {walkin.services.map((service, idx) => (
@@ -260,8 +364,7 @@ const WalkinList = ({
             </Card>
           )}
 
-          {/* Products Section */}
-          {walkin.products && walkin.products.length > 0 && (
+          {walkin.products?.length > 0 && (
             <Card size="small" title={`Products (${walkin.products.length})`}>
               <div className="space-y-2">
                 {walkin.products.map((product, idx) => (
@@ -294,7 +397,6 @@ const WalkinList = ({
             </Card>
           )}
 
-          {/* Payment Summary */}
           <Card
             size="small"
             title="Payment Summary"
@@ -352,59 +454,38 @@ const WalkinList = ({
               </div>
             </div>
           </Card>
-
-          {/* Additional Info */}
-          <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-            <div>
-              <div className="font-medium">Invoice #</div>
-              <div>{walkin.invoiceNumber || "N/A"}</div>
-            </div>
-            <div>
-              <div className="font-medium">Created Date</div>
-              <div>{new Date(walkin.createdAt).toLocaleDateString()}</div>
-            </div>
-          </div>
         </div>
       ),
       footer: (
         <div className="flex justify-between">
-          <div>
-            <Button
-              onClick={() => handleShowQR(walkin)}
-              icon={<QrcodeOutlined />}
-            >
-              View QR Code
-            </Button>
-          </div>
-          <div className="space-x-2">
-            <Button
-              onClick={() => handleDownloadPDF(walkin._id)}
-              icon={<Download />}
-            >
-              Download PDF
-            </Button>
-          </div>
+          <Button onClick={() => handleShowQR(walkin)} icon={<QrcodeOutlined />}>
+            View QR
+          </Button>
+          <Button
+            onClick={() => handleDownloadPDF(walkin._id)}
+            icon={<Download />}
+          >
+            PDF
+          </Button>
         </div>
       ),
     });
   };
 
-  // Export to Excel
   const exportToExcel = () => {
-    const exportData = walkins.map((walkin) => ({
+    const exportData = filteredWalkins.map((walkin) => ({
       "Walk-in #": walkin.walkinNumber,
       "Customer Name": walkin.customerName,
       Phone: walkin.customerPhone,
       Email: walkin.customerEmail,
       Branch: walkin.branch,
-      Services:
-        walkin.services?.map((s) => s.service?.name).join(", ") || "None",
+      Seat: getSeatLabel(walkin), // ✅ Seat added
+      Services: walkin.services?.map((s) => s.service?.name).join(", ") || "None",
       Products:
         walkin.products
           ?.map((p) => `${p.product?.name} x${p.quantity}`)
           .join(", ") || "None",
       Subtotal: walkin.subtotal,
-      Tax: walkin.tax,
       Discount: walkin.discount,
       "Total Amount": walkin.totalAmount,
       "Amount Paid": walkin.amountPaid,
@@ -424,10 +505,9 @@ const WalkinList = ({
     message.success("Walkins exported to Excel successfully!");
   };
 
-  // Handle service selection - Use separate replace endpoint
+  // ===== Save handlers (same as your endpoints) =====
   const handleServicesSelected = async (walkinId, selectedServices) => {
     try {
-      // Prepare services payload
       const servicesPayload = selectedServices.map((s) => ({
         serviceId: String(s.serviceId),
         pricingId: String(s.pricingId),
@@ -436,165 +516,80 @@ const WalkinList = ({
         duration: Number(s.duration) || 30,
       }));
 
-      console.log("💾 Replacing services via separate endpoint:", servicesPayload);
-
-      // Use the replace-services endpoint
-      const response = await api.put(`/walkins/${walkinId}/replace-services`, {
+      await api.put(`/walkins/${walkinId}/replace-services`, {
         services: servicesPayload,
       });
 
-      console.log("✅ Services replaced:", response.data);
-
-      if (response.data?.data) {
-        const updatedWalkin = response.data.data;
-        setWalkinSelections((prev) => ({
-          ...prev,
-          [walkinId]: {
-            ...prev[walkinId],
-            services: updatedWalkin.services || [],
-          },
-        }));
-
-        message.success(`Services saved! ${updatedWalkin.services?.length || 0} service(s).`);
-      }
-
-      // Refresh walkins list
+      message.success("Services saved!");
       await fetchWalkins();
     } catch (error) {
-      console.error("Failed to replace services:", error);
       message.error(error.response?.data?.message || "Failed to save services");
     }
   };
 
-  // Handle employee selection
   const handleEmployeesSelected = async (walkinId, selectedEmployees) => {
     try {
-      // First, fetch current walk-in to get existing services
       const walkinResponse = await api.get(`/walkins/${walkinId}`);
-      const currentWalkin = walkinResponse.data?.data || walkinResponse.data;
-      
-      if (!currentWalkin) {
-        message.error("Walk-in not found");
-        return;
-      }
+      const current = walkinResponse.data?.data || walkinResponse.data;
+      if (!current) return message.error("Walk-in not found");
 
-      // Get existing services
-      const existingServices = currentWalkin.services || [];
+      const existingServices = current.services || [];
 
-      // Assign employees to services (first employee to first service, etc.)
       const servicesWithEmployees = existingServices.map((service, index) => ({
         serviceId: service.service?._id || service.service,
         pricingId: service.pricing?._id || service.pricing,
-        staffId: selectedEmployees[index]?._id || service.staff?._id || service.staff || null,
+        staffId:
+          selectedEmployees[index]?._id ||
+          service.staff?._id ||
+          service.staff ||
+          null,
         price: service.price || 0,
         duration: service.duration || 30,
       }));
 
       if (servicesWithEmployees.length > 0) {
-        const servicesPayload = servicesWithEmployees.map((s) => ({
-          serviceId: s.serviceId,
-          pricingId: s.pricingId,
-          staffId: s.staffId || null,
-          price: s.price,
-          duration: s.duration,
-        }));
-
-        const response = await api.put(`/walkins/${walkinId}`, {
-          services: servicesPayload,
+        await api.put(`/walkins/${walkinId}`, {
+          services: servicesWithEmployees,
         });
-
-        // Fetch the updated walk-in from backend
-        try {
-          const updatedWalkinResponse = await api.get(`/walkins/${walkinId}`);
-          const updatedWalkin = updatedWalkinResponse.data?.data || updatedWalkinResponse.data;
-          
-          if (updatedWalkin) {
-            // Update local state with fetched data
-            setWalkinSelections((prev) => ({
-              ...prev,
-              [walkinId]: {
-                ...prev[walkinId],
-                employees: selectedEmployees,
-                services: updatedWalkin.services || [],
-              },
-            }));
-          }
-        } catch (fetchError) {
-          console.error("Failed to fetch updated walk-in:", fetchError);
-        }
-      } else {
-        // Just save employees for later use
-        setWalkinSelections((prev) => ({
-          ...prev,
-          [walkinId]: {
-            ...prev[walkinId],
-            employees: selectedEmployees,
-          },
-        }));
       }
 
       message.success("Employees assigned successfully!");
-      // Refresh walkins to get latest data
       await fetchWalkins();
     } catch (error) {
-      console.error("Failed to assign employees:", error);
       message.error(error.response?.data?.message || "Failed to assign employees");
     }
   };
 
-  // Handle product selection - Use separate replace endpoint
   const handleProductsSelected = async (walkinId, selectedProducts) => {
     try {
-      // Prepare products payload
       const productsPayload = selectedProducts.map((p) => ({
         productId: p.productId,
         quantity: Number(p.quantity) || 1,
         price: Number(p.price) || 0,
       }));
 
-      console.log("💾 Replacing products via separate endpoint:", productsPayload);
-
-      // Use the replace-products endpoint
-      const response = await api.put(`/walkins/${walkinId}/replace-products`, {
+      await api.put(`/walkins/${walkinId}/replace-products`, {
         products: productsPayload,
       });
 
-      console.log("✅ Products replaced:", response.data);
-
-      if (response.data?.data) {
-        const updatedWalkin = response.data.data;
-        setWalkinSelections((prev) => ({
-          ...prev,
-          [walkinId]: {
-            ...prev[walkinId],
-            products: updatedWalkin.products || [],
-          },
-        }));
-
-        message.success(`Products saved! ${updatedWalkin.products?.length || 0} product(s).`);
-      }
-
-      // Refresh walkins list
+      message.success("Products saved!");
       await fetchWalkins();
     } catch (error) {
-      console.error("Failed to replace products:", error);
       message.error(error.response?.data?.message || "Failed to save products");
     }
   };
 
-  // Handle status update
+  // Status
   const handleUpdateStatus = (walkin) => {
     setCurrentWalkin(walkin);
     setSelectedStatus(walkin.status || "draft");
     setStatusModalVisible(true);
   };
 
-  // Save status update
   const handleSaveStatus = async () => {
     if (!currentWalkin) return;
 
     const currentStatus = currentWalkin.status || "draft";
-    
     if (selectedStatus === currentStatus) {
       message.info("Status unchanged");
       setStatusModalVisible(false);
@@ -602,47 +597,45 @@ const WalkinList = ({
     }
 
     try {
-      // Use the fast status-only endpoint
-      const response = await api.patch(`/walkins/${currentWalkin._id}/status-only`, {
+      const res = await api.patch(`/walkins/${currentWalkin._id}/status-only`, {
         status: selectedStatus,
       });
 
-      if (response.data.success) {
+      if (res.data.success) {
         message.success(`Status updated to ${selectedStatus.toUpperCase()}`);
         setStatusModalVisible(false);
         setCurrentWalkin(null);
         setSelectedStatus("");
         await fetchWalkins();
       } else {
-        message.error(response.data.message || "Failed to update status");
+        message.error(res.data.message || "Failed to update status");
       }
     } catch (error) {
-      console.error("Failed to update status:", error);
       message.error(error.response?.data?.message || "Failed to update status");
     }
   };
 
-  // Handle payment update
+  // Payment
   const handleUpdatePayment = (walkin) => {
     setCurrentWalkin(walkin);
     setPaymentAmount(walkin.amountPaid || 0);
     setPaymentMethod(walkin.paymentMethod || "cash");
     setDiscountValue(walkin.discount || 0);
-    // Determine discount type based on existing discount
+
     if (walkin.discount && walkin.subtotal) {
       const percentage = (walkin.discount / walkin.subtotal) * 100;
-      if (percentage > 0 && percentage <= 100 && Math.abs(percentage - Math.round(percentage)) < 0.01) {
+      if (
+        percentage > 0 &&
+        percentage <= 100 &&
+        Math.abs(percentage - Math.round(percentage)) < 0.01
+      ) {
         setDiscountType("percentage");
-      } else {
-        setDiscountType("amount");
-      }
-    } else {
-      setDiscountType("amount");
-    }
+      } else setDiscountType("amount");
+    } else setDiscountType("amount");
+
     setPaymentModalVisible(true);
   };
 
-  // Calculate discount amount based on type
   const calculateDiscountAmount = () => {
     if (!currentWalkin) return 0;
     const subtotal = currentWalkin.subtotal || currentWalkin.totalAmount || 0;
@@ -652,7 +645,6 @@ const WalkinList = ({
     return discountValue || 0;
   };
 
-  // Calculate total after discount
   const calculateTotalAfterDiscount = () => {
     if (!currentWalkin) return 0;
     const subtotal = currentWalkin.subtotal || currentWalkin.totalAmount || 0;
@@ -660,21 +652,19 @@ const WalkinList = ({
     return Math.max(subtotal - discount, 0);
   };
 
-  // Save payment update
   const handleSavePayment = async () => {
     if (!currentWalkin) return;
 
     try {
       const discountAmount = calculateDiscountAmount();
-      const totalAfterDiscount = calculateTotalAfterDiscount();
 
-      const response = await api.patch(`/walkins/${currentWalkin._id}/payment`, {
+      const res = await api.patch(`/walkins/${currentWalkin._id}/payment`, {
         amountPaid: parseFloat(paymentAmount) || 0,
-        paymentMethod: paymentMethod,
+        paymentMethod,
         discount: discountAmount,
       });
 
-      if (response.data.success) {
+      if (res.data.success) {
         message.success("Payment updated successfully");
         setPaymentModalVisible(false);
         setCurrentWalkin(null);
@@ -684,55 +674,34 @@ const WalkinList = ({
         setDiscountType("amount");
         await fetchWalkins();
       } else {
-        message.error(response.data.message || "Failed to update payment");
+        message.error(res.data.message || "Failed to update payment");
       }
     } catch (error) {
-      console.error("Failed to update payment:", error);
       message.error(error.response?.data?.message || "Failed to update payment");
     }
   };
 
-  // Handle price calculation
+  // Calculate price
   const handleCalculatePrice = async (walkin) => {
     try {
-      // Fetch the latest walk-in data from backend to ensure we have the most recent services/products
       const response = await api.get(`/walkins/${walkin._id}`);
       const latestWalkin = response.data?.data || response.data;
+      if (!latestWalkin) return message.error("Failed to fetch walk-in data");
 
-      if (!latestWalkin) {
-        message.error("Failed to fetch walk-in data");
-        return;
-      }
+      const servicesTotal = (latestWalkin.services || []).reduce((sum, s) => {
+        const price = s.price || s.service?.pricing?.[0]?.price || 0;
+        return sum + price;
+      }, 0);
 
-      console.log("Latest walk-in data for calculation:", latestWalkin);
-      console.log("Services:", latestWalkin.services);
-      console.log("Products:", latestWalkin.products);
-
-      // Calculate from fresh backend data
-      const servicesTotal = (latestWalkin.services || []).reduce(
-        (sum, s) => {
-          const price = s.price || (s.service?.pricing?.[0]?.price) || 0;
-          console.log(`Service: ${s.service?.name || 'Unknown'}, Price: ${price}`);
-          return sum + price;
-        },
-        0
-      );
-      const productsTotal = (latestWalkin.products || []).reduce(
-        (sum, p) => {
-          const total = p.total || (p.price || 0) * (p.quantity || 1);
-          console.log(`Product: ${p.product?.name || 'Unknown'}, Total: ${total}`);
-          return sum + total;
-        },
-        0
-      );
-
-      console.log("Calculated totals:", { servicesTotal, productsTotal });
+      const productsTotal = (latestWalkin.products || []).reduce((sum, p) => {
+        const total = p.total || (p.price || 0) * (p.quantity || 1);
+        return sum + total;
+      }, 0);
 
       const subtotal = servicesTotal + productsTotal;
       const discount = latestWalkin.discount || 0;
       const totalAmount = Math.max(subtotal - discount, 0);
 
-      // Show calculated price
       Modal.confirm({
         title: "Calculated Price",
         content: (
@@ -767,94 +736,33 @@ const WalkinList = ({
         cancelText: "Cancel",
         onOk: async () => {
           try {
-            // Update walk-in with calculated price
-            const updateResponse = await api.put(`/walkins/${walkin._id}`, {
+            await api.put(`/walkins/${walkin._id}`, {
               subtotal,
               totalAmount,
               discount,
             });
-
-            message.success("Price calculated and saved successfully!");
-            // Refresh walkins to show updated price
+            message.success("Price calculated and saved!");
             await fetchWalkins();
           } catch (error) {
-            console.error("Failed to save price:", error);
-            message.error(error.response?.data?.message || "Failed to save calculated price");
+            message.error(
+              error.response?.data?.message || "Failed to save calculated price"
+            );
           }
         },
       });
-    } catch (error) {
-      console.error("Failed to calculate price:", error);
+    } catch {
       message.error("Failed to calculate price");
     }
   };
 
-  // Filter walkins
+  // ===== Filtering (basic + advanced) =====
   const filteredWalkins = useMemo(() => {
     return walkins.filter((walkin) => {
-      // If Advanced Filters tab is active, use advanced filters
-      if (activeTab === "2") {
-        // Date range filter
-        if (dateRange && dateRange[0] && dateRange[1]) {
-          const walkinDate = new Date(walkin.createdAt || walkin.walkinDate);
-          // Handle dayjs objects from Ant Design DatePicker
-          const startDate = dateRange[0].toDate ? dateRange[0].toDate() : new Date(dateRange[0]);
-          const endDate = dateRange[1].toDate ? dateRange[1].toDate() : new Date(dateRange[1]);
-          endDate.setHours(23, 59, 59, 999); // Include entire end date
-          if (walkinDate < startDate || walkinDate > endDate) {
-            return false;
-          }
-        }
-
-        // Advanced status filter
-        if (advancedStatusFilter !== "all" && walkin.status !== advancedStatusFilter) {
-          return false;
-        }
-
-        // Advanced branch filter
-        if (advancedBranchFilter !== "all" && walkin.branch !== advancedBranchFilter) {
-          return false;
-        }
-
-        // Payment status filter
-        if (paymentStatusFilter !== "all" && walkin.paymentStatus !== paymentStatusFilter) {
-          return false;
-        }
-
-        // Amount range filter
-        const totalAmount = walkin.totalAmount || 0;
-        if (minAmount !== null && totalAmount < minAmount) {
-          return false;
-        }
-        if (maxAmount !== null && totalAmount > maxAmount) {
-          return false;
-        }
-
-        // Customer name filter
-        if (customerNameFilter && !walkin.customerName?.toLowerCase().includes(customerNameFilter.toLowerCase())) {
-          return false;
-        }
-
-        // Phone filter
-        if (phoneFilter && !walkin.customerPhone?.includes(phoneFilter)) {
-          return false;
-        }
-
-        // Walk-in number filter
-        if (walkinNumberFilter && !walkin.walkinNumber?.toLowerCase().includes(walkinNumberFilter.toLowerCase())) {
-          return false;
-        }
-
-        // All advanced filters passed
-        return true;
-      }
-
-      // If All Walk-ins tab is active, use basic filters
       const matchesSearch =
         searchText === "" ||
-        walkin.customerName.toLowerCase().includes(searchText.toLowerCase()) ||
-        walkin.walkinNumber.toLowerCase().includes(searchText.toLowerCase()) ||
-        walkin.customerPhone.includes(searchText);
+        walkin.customerName?.toLowerCase().includes(searchText.toLowerCase()) ||
+        walkin.walkinNumber?.toLowerCase().includes(searchText.toLowerCase()) ||
+        walkin.customerPhone?.includes(searchText);
 
       const matchesStatus =
         statusFilter === "all" || walkin.status === statusFilter;
@@ -871,11 +779,74 @@ const WalkinList = ({
         matchesDate = new Date(walkin.createdAt) >= weekAgo;
       }
 
-      return matchesSearch && matchesStatus && matchesBranch && matchesDate;
+      let matchesAdvanced = true;
+
+      if (hasActiveAdvancedFilters()) {
+        if (dateRange && dateRange[0] && dateRange[1]) {
+          const walkinDate = new Date(walkin.createdAt || walkin.walkinDate);
+          const startDate = dateRange[0].toDate
+            ? dateRange[0].toDate()
+            : new Date(dateRange[0]);
+          const endDate = dateRange[1].toDate
+            ? dateRange[1].toDate()
+            : new Date(dateRange[1]);
+          endDate.setHours(23, 59, 59, 999);
+          if (walkinDate < startDate || walkinDate > endDate)
+            matchesAdvanced = false;
+        }
+
+        if (
+          advancedStatusFilter !== "all" &&
+          walkin.status !== advancedStatusFilter
+        )
+          matchesAdvanced = false;
+
+        if (
+          advancedBranchFilter !== "all" &&
+          walkin.branch !== advancedBranchFilter
+        )
+          matchesAdvanced = false;
+
+        if (
+          paymentStatusFilter !== "all" &&
+          walkin.paymentStatus !== paymentStatusFilter
+        )
+          matchesAdvanced = false;
+
+        const totalAmount = walkin.totalAmount || 0;
+        if (minAmount !== null && totalAmount < minAmount) matchesAdvanced = false;
+        if (maxAmount !== null && totalAmount > maxAmount) matchesAdvanced = false;
+
+        if (
+          customerNameFilter &&
+          !walkin.customerName
+            ?.toLowerCase()
+            .includes(customerNameFilter.toLowerCase())
+        )
+          matchesAdvanced = false;
+
+        if (phoneFilter && !walkin.customerPhone?.includes(phoneFilter))
+          matchesAdvanced = false;
+
+        if (
+          walkinNumberFilter &&
+          !walkin.walkinNumber
+            ?.toLowerCase()
+            .includes(walkinNumberFilter.toLowerCase())
+        )
+          matchesAdvanced = false;
+      }
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesBranch &&
+        matchesDate &&
+        matchesAdvanced
+      );
     });
   }, [
     walkins,
-    activeTab,
     searchText,
     statusFilter,
     branchFilter,
@@ -891,74 +862,246 @@ const WalkinList = ({
     walkinNumberFilter,
   ]);
 
-  // Clear all advanced filters
-  const clearAdvancedFilters = () => {
-    setDateRange(null);
-    setAdvancedStatusFilter("all");
-    setAdvancedBranchFilter("all");
-    setPaymentStatusFilter("all");
-    setMinAmount(null);
-    setMaxAmount(null);
-    setCustomerNameFilter("");
-    setPhoneFilter("");
-    setWalkinNumberFilter("");
-    message.info("Advanced filters cleared");
-  };
+  // ===== Quick Actions (Premium) =====
+  const QuickActions = ({ record }) => {
+    const servicesArr = record.services || [];
+    const productsArr = record.products || [];
+    const employeesCount = servicesArr.filter((s) => s.staff).length;
 
-  // Check if any advanced filter is active
-  const hasActiveAdvancedFilters = () => {
+    const hasSelections = servicesArr.length > 0 || productsArr.length > 0;
+    const statusMeta = getStatusTag(record.status);
+    const paymentMeta = getPaymentTag(record.paymentStatus);
+
+    const openServices = () => {
+      setCurrentWalkin(record);
+      setServiceModalVisible(true);
+    };
+    const openEmployees = () => {
+      setCurrentWalkin(record);
+      setEmployeeModalVisible(true);
+    };
+    const openProducts = () => {
+      setCurrentWalkin(record);
+      setProductModalVisible(true);
+    };
+    const openStatus = () => handleUpdateStatus(record);
+    const openPayment = () => handleUpdatePayment(record);
+    const openCalc = () => handleCalculatePrice(record);
+
+    const menuItems = [
+      {
+        key: "header",
+        label: (
+          <div style={{ padding: "6px 4px" }}>
+            <div
+              style={{
+                fontWeight: 600,
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 8,
+              }}
+            >
+              <span>{record.walkinNumber}</span>
+              <Tag color={statusMeta.color} style={{ margin: 0 }}>
+                {statusMeta.text}
+              </Tag>
+            </div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+              {record.customerName} • {record.customerPhone}
+            </div>
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+              Total: ₹{record.totalAmount?.toFixed(2) || "0.00"} •{" "}
+              <Tag color={paymentMeta.color} style={{ margin: 0 }}>
+                {paymentMeta.text}
+              </Tag>
+            </div>
+
+            {/* ✅ Seat shown in dropdown header */}
+            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+              Seat: {getSeatLabel(record)}
+            </div>
+          </div>
+        ),
+        disabled: true,
+      },
+      { type: "divider" },
+
+      {
+        key: "m1",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        disabled: true,
+      },
+      {
+        key: "services",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Scissors className="w-4 h-4" />
+              <span>Services</span>
+            </span>
+            <Tag color={servicesArr.length ? "blue" : "default"} style={{ margin: 0 }}>
+              {servicesArr.length}
+            </Tag>
+          </div>
+        ),
+        onClick: openServices,
+      },
+      {
+        key: "employees",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <Users className="w-4 h-4" />
+              <span>Employees</span>
+            </span>
+            <Tag color={employeesCount ? "green" : "default"} style={{ margin: 0 }}>
+              {employeesCount}
+            </Tag>
+          </div>
+        ),
+        onClick: openEmployees,
+        disabled: servicesArr.length === 0,
+      },
+      {
+        key: "products",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <ShoppingBag className="w-4 h-4" />
+              <span>Products</span>
+            </span>
+            <Tag color={productsArr.length ? "gold" : "default"} style={{ margin: 0 }}>
+              {productsArr.length}
+            </Tag>
+          </div>
+        ),
+        onClick: openProducts,
+      },
+
+      { type: "divider" },
+
+      {
+        key: "m2",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        disabled: true,
+      },
+      {
+        key: "status",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span>Status</span>
+            <Tag color={statusMeta.color} style={{ margin: 0 }}>
+              {statusMeta.text}
+            </Tag>
+          </div>
+        ),
+        onClick: openStatus,
+      },
+      {
+        key: "payment",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <DollarSign className="w-4 h-4" />
+              Payment
+            </span>
+            <Tag color={paymentMeta.color} style={{ margin: 0 }}>
+              {paymentMeta.text}
+            </Tag>
+          </div>
+        ),
+        onClick: openPayment,
+      },
+
+      { type: "divider" },
+
+      {
+        key: "calc",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Calculator className="w-4 h-4" />
+              Calculate & Save
+            </span>
+            <Tag color={hasSelections ? "cyan" : "default"} style={{ margin: 0 }}>
+              {hasSelections ? "READY" : "PENDING"}
+            </Tag>
+          </div>
+        ),
+        onClick: openCalc,
+        disabled: !hasSelections,
+      },
+    ];
+
     return (
-      (dateRange && dateRange[0] && dateRange[1]) ||
-      advancedStatusFilter !== "all" ||
-      advancedBranchFilter !== "all" ||
-      paymentStatusFilter !== "all" ||
-      minAmount !== null ||
-      maxAmount !== null ||
-      customerNameFilter !== "" ||
-      phoneFilter !== "" ||
-      walkinNumberFilter !== ""
+      <Space size="small" wrap>
+        <Tooltip title={hasSelections ? "Calculate Price" : "Select services/products first"}>
+          <Button
+            size="small"
+            type="primary"
+            disabled={!hasSelections}
+            icon={<Calculator className="w-4 h-4" />}
+            onClick={openCalc}
+          >
+            {isMobile ? "Calc" : "Calculate"}
+          </Button>
+        </Tooltip>
+
+        <Dropdown
+          trigger={["click"]}
+          placement="bottomRight"
+          overlayStyle={{ width: isMobile ? 280 : 320 }}
+          menu={{ items: menuItems }}
+        >
+          <Button size="small" icon={<MoreOutlined />} />
+        </Dropdown>
+      </Space>
     );
   };
 
-  // Columns
+  // ===== Desktop Table Columns =====
   const columns = [
     {
       title: "Walk-in #",
       dataIndex: "walkinNumber",
       key: "walkinNumber",
       width: 120,
-      sorter: (a, b) => a.walkinNumber.localeCompare(b.walkinNumber),
-      ellipsis: true,
-      render: (text) => <span style={{ whiteSpace: "nowrap" }}>{text}</span>,
+      sorter: (a, b) => (a.walkinNumber || "").localeCompare(b.walkinNumber || ""),
     },
     {
       title: "Customer",
       key: "customer",
-      width: 200,
-      ellipsis: true,
+      width: 220,
       render: (_, record) => (
-        <div style={{ whiteSpace: "nowrap" }}>
-          <div className="font-semibold" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {record.customerName}
-          </div>
-          <div className="text-sm text-gray-500" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {record.customerPhone}
-          </div>
-          <div className="text-xs text-gray-400" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-            {record.branch}
-          </div>
+        <div>
+          <div className="font-semibold">{record.customerName}</div>
+          <div className="text-sm text-gray-500">{record.customerPhone}</div>
+          <div className="text-xs text-gray-400">{record.branch}</div>
         </div>
       ),
     },
+
+    // ✅ Seat column added
+    {
+      title: "Seat",
+      key: "seat",
+      width: 120,
+      align: "center",
+      render: (_, record) => (
+        <Tag color="purple" style={{ margin: 0 }}>
+          {getSeatLabel(record)}
+        </Tag>
+      ),
+    },
+
     {
       title: "Services",
       key: "services",
-      width: 250,
-      ellipsis: true,
+      width: 260,
       render: (_, record) => (
-        <div style={{ whiteSpace: "nowrap" }}>
+        <div>
           {record.services?.slice(0, 2).map((s, i) => (
-            <Tag key={i} color="blue" className="mb-1" style={{ marginRight: 4 }}>
+            <Tag key={i} color="blue" style={{ marginBottom: 6 }}>
               {s.service?.name || "Service"}
             </Tag>
           ))}
@@ -974,189 +1117,55 @@ const WalkinList = ({
       title: "Status",
       dataIndex: "status",
       key: "status",
-      width: 120,
+      width: 130,
       align: "center",
       render: (status) => {
-        const statusConfig = {
-          draft: { color: "default", text: "Draft" },
-          confirmed: { color: "blue", text: "Confirmed" },
-          in_progress: { color: "orange", text: "In Progress" },
-          completed: { color: "green", text: "Completed" },
-          cancelled: { color: "red", text: "Cancelled" },
-        };
-        const config = statusConfig[status] || { color: "gray", text: status };
-        return <Tag color={config.color} style={{ whiteSpace: "nowrap" }}>{config.text}</Tag>;
+        const meta = getStatusTag(status);
+        return <Tag color={meta.color}>{meta.text}</Tag>;
       },
     },
     {
-      title: "Created By",
-      key: "createdBy",
-      width: 180,
-      ellipsis: true,
-      render: (_, record) => {
-        const createdBy = record.createdBy;
-        if (!createdBy) {
-          return <Tag color="default" style={{ whiteSpace: "nowrap" }}>System</Tag>;
-        }
-        return (
-          <div style={{ whiteSpace: "nowrap" }}>
-            <div className="font-medium" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-              {createdBy.name || "Unknown"}
-            </div>
-            {createdBy.email && (
-              <div className="text-xs text-gray-500" style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-                {createdBy.email}
-              </div>
-            )}
-          </div>
-        );
-      },
-    },
-    {
-      title: "Total Amount",
+      title: "Total",
       key: "totalAmount",
-      width: 130,
+      width: 140,
       align: "right",
       render: (_, record) => (
-        <Tag color="green" className="font-bold" style={{ whiteSpace: "nowrap" }}>
+        <Tag color="green" className="font-bold">
           ₹{record.totalAmount?.toFixed(2) || "0.00"}
         </Tag>
       ),
     },
     {
-      title: "Manage",
+      title: "Quick Actions",
       key: "manage",
-      width: 500,
+      width: 240,
       fixed: "right",
-      render: (_, record) => {
-        // Always use data from backend (record) - it's the source of truth
-        // walkinSelections is only for temporary state during editing
-        const services = record.services || [];
-        const products = record.products || [];
-        const hasSelections =
-          (Array.isArray(services) && services.length > 0) ||
-          (Array.isArray(products) && products.length > 0);
-        
-        // Get employee count from services (staff assigned)
-        const employeesCount = services.filter(s => s.staff).length;
-
-        return (
-          <Space size="small" wrap style={{ whiteSpace: "nowrap" }}>
-            <Tooltip title="Select Services">
-              <Button
-                size="small"
-                type="default"
-                icon={<Scissors className="w-3 h-3" />}
-                onClick={() => {
-                  setCurrentWalkin(record);
-                  setServiceModalVisible(true);
-                }}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Services ({Array.isArray(services) ? services.length : 0})
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="Select Employees">
-              <Button
-                size="small"
-                type="default"
-                icon={<Users className="w-3 h-3" />}
-                onClick={() => {
-                  setCurrentWalkin(record);
-                  setEmployeeModalVisible(true);
-                }}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Employees ({employeesCount})
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="Select Products">
-              <Button
-                size="small"
-                type="default"
-                icon={<ShoppingBag className="w-3 h-3" />}
-                onClick={() => {
-                  setCurrentWalkin(record);
-                  setProductModalVisible(true);
-                }}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Products ({Array.isArray(products) ? products.length : 0})
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="Calculate Price">
-              <Button
-                size="small"
-                type="primary"
-                icon={<Calculator className="w-3 h-3" />}
-                disabled={!hasSelections}
-                onClick={() => handleCalculatePrice(record)}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Calculate
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="Update Status">
-              <Button
-                size="small"
-                type="default"
-                icon={<CheckCircle className="w-3 h-3" />}
-                onClick={() => handleUpdateStatus(record)}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Status
-              </Button>
-            </Tooltip>
-
-            <Tooltip title="Enter Payment Amount">
-              <Button
-                size="small"
-                type="default"
-                icon={<DollarSign className="w-3 h-3" />}
-                onClick={() => handleUpdatePayment(record)}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                Payment
-              </Button>
-            </Tooltip>
-          </Space>
-        );
-      },
+      render: (_, record) => <QuickActions record={record} />,
     },
     {
       title: "Actions",
       key: "actions",
-      width: 200,
+      width: 140,
       fixed: "right",
       render: (_, record) => (
-        <Space size="small" style={{ whiteSpace: "nowrap" }}>
-          {/* View Details Button - NOW WORKING */}
+        <Space>
           <Tooltip title="View Details">
             <Button
-              size="small"
-              type="default"
+              type="text"
               icon={<EyeOutlined />}
               onClick={() => showWalkinDetails(record)}
             />
           </Tooltip>
-
-          {/* Download PDF Button */}
-          <Tooltip title="Download PDF">
+          <Tooltip title="PDF">
             <Button
-              size="small"
+              type="text"
               icon={<FilePdfOutlined />}
               onClick={() => handleDownloadPDF(record._id)}
             />
           </Tooltip>
-
-          {/* QR Code Button */}
-          <Tooltip title="Show QR Code">
+          <Tooltip title="QR">
             <Button
-              size="small"
+              type="text"
               icon={<QrcodeOutlined />}
               onClick={() => handleShowQR(record)}
             />
@@ -1166,230 +1175,308 @@ const WalkinList = ({
     },
   ];
 
+  // ===== Stats =====
+  const totalAmountSum = filteredWalkins.reduce(
+    (sum, w) => sum + (w.totalAmount || 0),
+    0
+  );
+
+  const totalInProgress = filteredWalkins.filter((w) => w.status === "in_progress").length;
+  const totalCompleted = filteredWalkins.filter((w) => w.status === "completed").length;
+
+  // ===== Mobile Card Row =====
+  const MobileWalkinCard = ({ w }) => {
+    const statusMeta = getStatusTag(w.status);
+    const paymentMeta = getPaymentTag(w.paymentStatus);
+
+    return (
+      <Card
+        size="small"
+        style={{ borderRadius: 14 }}
+        bodyStyle={{ padding: 12 }}
+        onClick={() => showWalkinDetails(w)}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ fontWeight: 700 }}>{w.walkinNumber}</div>
+          <Tag color={statusMeta.color} style={{ margin: 0 }}>
+            {statusMeta.text}
+          </Tag>
+        </div>
+
+        <div style={{ marginTop: 6, color: "#374151" }}>
+          <div style={{ fontWeight: 600 }}>{w.customerName}</div>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>
+            {w.customerPhone} • {w.branch}
+          </div>
+
+          {/* ✅ Seat shown on mobile card */}
+          <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+            Seat: <span style={{ fontWeight: 600 }}>{getSeatLabel(w)}</span>
+          </div>
+        </div>
+
+        <Divider style={{ margin: "10px 0" }} />
+
+        {/* Services/Products preview */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {(w.services || []).slice(0, 2).map((s, i) => (
+            <Tag key={`s-${i}`} color="blue" style={{ margin: 0 }}>
+              {s.service?.name || "Service"}
+            </Tag>
+          ))}
+          {(w.services || []).length > 2 && (
+            <Tag color="cyan" style={{ margin: 0 }}>
+              +{(w.services || []).length - 2} Services
+            </Tag>
+          )}
+
+          {(w.products || []).slice(0, 1).map((p, i) => (
+            <Tag key={`p-${i}`} color="gold" style={{ margin: 0 }}>
+              {p.product?.name || "Product"}
+            </Tag>
+          ))}
+          {(w.products || []).length > 1 && (
+            <Tag color="gold" style={{ margin: 0 }}>
+              +{(w.products || []).length - 1} Products
+            </Tag>
+          )}
+        </div>
+
+        <Divider style={{ margin: "10px 0" }} />
+
+        {/* Totals */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
+            <div style={{ fontWeight: 800, fontSize: 16 }}>
+              ₹{w.totalAmount?.toFixed(2) || "0.00"}
+            </div>
+          </div>
+          <Tag color={paymentMeta.color} style={{ margin: 0 }}>
+            {paymentMeta.text}
+          </Tag>
+        </div>
+
+        {/* Actions row */}
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
+          <QuickActions record={w} />
+
+          <Space>
+            <Tooltip title="PDF">
+              <Button
+                size="small"
+                icon={<FilePdfOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDownloadPDF(w._id);
+                }}
+              />
+            </Tooltip>
+            <Tooltip title="QR">
+              <Button
+                size="small"
+                icon={<QrcodeOutlined />}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleShowQR(w);
+                }}
+              />
+            </Tooltip>
+          </Space>
+        </div>
+      </Card>
+    );
+  };
+
   return (
     <>
       <style>{`
-        .walkin-table .ant-table-cell {
-          white-space: nowrap;
-          padding: 12px 16px;
+        /* dropdown polish */
+        .ant-dropdown-menu-item {
+          padding: 10px 12px !important;
+          border-radius: 12px;
+          margin: 6px 6px;
         }
-        .walkin-table .ant-table-thead > tr > th {
-          white-space: nowrap;
-          font-weight: 600;
-          background-color: #fafafa;
-        }
-        .walkin-table .ant-table-tbody > tr > td {
-          white-space: nowrap;
-          vertical-align: middle;
-        }
-        .walkin-table .ant-space {
-          white-space: nowrap;
-        }
-        .walkin-table .ant-btn {
-          white-space: nowrap;
-        }
+        .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
-      <Tabs activeKey={activeTab} onChange={setActiveTab} className="mb-6">
-        {/* TAB 1: ALL WALK-INS */}
-        <TabPane tab="All Walk-ins" key="1">
-          {/* Basic Filters */}
-          <div className="flex flex-wrap gap-4 mb-6">
+
+      {/* Filters */}
+      <Card size="small" className="mb-4" style={{ borderRadius: 14 }}>
+        <Row gutter={[10, 10]} align="middle">
+          <Col xs={24} md={8}>
             <Input
-              placeholder="Search by name, walkin #, phone..."
-              prefix={<FilterOutlined />}
+              placeholder="Search name / walk-in # / phone"
+              prefix={<SearchOutlined />}
+              allowClear
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              style={{ width: 300 }}
             />
+          </Col>
 
-            <Select
-              placeholder="Status"
-              value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: 150 }}
-            >
+          <Col xs={12} md={4}>
+            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
               <Option value="all">All Status</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
               <Option value="completed">Completed</Option>
               <Option value="cancelled">Cancelled</Option>
             </Select>
+          </Col>
 
-            <Select
-              placeholder="Branch"
-              value={branchFilter}
-              onChange={setBranchFilter}
-              style={{ width: 150 }}
-            >
+          <Col xs={12} md={4}>
+            <Select value={branchFilter} onChange={setBranchFilter} style={{ width: "100%" }}>
               <Option value="all">All Branches</Option>
-              {branches.map((branch) => (
-                <Option key={branch._id} value={branch.name}>
-                  {branch.name}
+              {branches.map((b) => (
+                <Option key={b._id} value={b.name}>
+                  {b.name}
                 </Option>
               ))}
             </Select>
+          </Col>
 
-            <Select
-              placeholder="Date"
-              value={dateFilter}
-              onChange={setDateFilter}
-              style={{ width: 150 }}
-            >
+          <Col xs={12} md={4}>
+            <Select value={dateFilter} onChange={setDateFilter} style={{ width: "100%" }}>
               <Option value="all">All Dates</Option>
               <Option value="today">Today</Option>
               <Option value="week">This Week</Option>
             </Select>
+          </Col>
+
+          <Col
+            xs={12}
+            md={4}
+            style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}
+          >
+            <Button
+              icon={<FilterOutlined />}
+              type={hasActiveAdvancedFilters() ? "primary" : "default"}
+              onClick={() => setAdvancedOpen(true)}
+            >
+              {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
+            </Button>
+
+            <Button icon={<ClearOutlined />} onClick={clearBasicFilters}>
+              Clear
+            </Button>
 
             <Button icon={<ReloadOutlined />} onClick={fetchWalkins}>
               Refresh
             </Button>
 
-            <Button
-              type="primary"
-              icon={<ExportOutlined />}
-              onClick={exportToExcel}
-            >
-              Export to Excel
+            {!isMobile && (
+              <Button type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
+                Export
+              </Button>
+            )}
+          </Col>
+
+          {isMobile && (
+            <Col xs={24}>
+              <Button block type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
+                Export to Excel
+              </Button>
+            </Col>
+          )}
+        </Row>
+      </Card>
+
+      {/* Stats */}
+      <Row gutter={[10, 10]} className="mb-4">
+        <Col xs={12} md={6}>
+          <Card size="small" style={{ borderRadius: 14 }}>
+            <Statistic title="Total" value={filteredWalkins.length} prefix={<TeamOutlined />} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card size="small" style={{ borderRadius: 14 }}>
+            <Statistic title="In Progress" value={totalInProgress} prefix={<ClockCircleOutlined />} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card size="small" style={{ borderRadius: 14 }}>
+            <Statistic title="Completed" value={totalCompleted} prefix={<CheckCircleOutlined />} />
+          </Card>
+        </Col>
+        <Col xs={12} md={6}>
+          <Card size="small" style={{ borderRadius: 14 }}>
+            <Statistic
+              title="Amount"
+              value={totalAmountSum}
+              prefix={<DollarOutlined />}
+              precision={2}
+              formatter={(value) => `₹${value}`}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* MOBILE: Card/List view  |  DESKTOP: Table */}
+      {isMobile ? (
+        <List
+          dataSource={filteredWalkins}
+          renderItem={(w) => (
+            <List.Item style={{ padding: "8px 0" }}>
+              <MobileWalkinCard w={w} />
+            </List.Item>
+          )}
+        />
+      ) : (
+        <Table
+          columns={columns}
+          dataSource={filteredWalkins}
+          rowKey="_id"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} walk-ins`,
+          }}
+          scroll={{ x: 1220, y: "calc(100vh - 360px)" }}
+          size="middle"
+          bordered
+        />
+      )}
+
+      {/* Advanced Filters Drawer */}
+      <Drawer
+        title="Advanced Filters"
+        open={advancedOpen}
+        onClose={() => setAdvancedOpen(false)}
+        width={isMobile ? "100%" : 440}
+        extra={
+          <Space>
+            <Button onClick={clearAdvancedFilters} icon={<ClearOutlined />}>
+              Clear
             </Button>
-          </div>
-
-          {/* Stats Row */}
-          <Row gutter={16} className="mb-6">
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="Total Walk-ins"
-                  value={filteredWalkins.length}
-                  prefix={<TeamOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="In Progress"
-                  value={
-                    filteredWalkins.filter((w) => w.status === "in_progress").length
-                  }
-                  prefix={<ClockCircleOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="Completed"
-                  value={
-                    filteredWalkins.filter((w) => w.status === "completed").length
-                  }
-                  prefix={<CheckCircleOutlined />}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          {/* Walkins Table */}
-          <Table
-            columns={columns}
-            dataSource={filteredWalkins}
-            rowKey="_id"
-            pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} walk-ins` }}
-            scroll={{ x: 1600, y: "calc(100vh - 400px)" }}
-            size="middle"
-            bordered
-            style={{ whiteSpace: "nowrap" }}
-            className="walkin-table"
-          />
-        </TabPane>
-
-        {/* TAB 2: ADVANCED FILTERS */}
-        <TabPane tab="Advanced Filters" key="2">
-          <AdvancedFilterPanel
-            branches={branches}
-            filteredWalkins={filteredWalkins}
-            allWalkins={walkins}
-            dateRange={dateRange}
-            setDateRange={setDateRange}
-            advancedStatusFilter={advancedStatusFilter}
-            setAdvancedStatusFilter={setAdvancedStatusFilter}
-            advancedBranchFilter={advancedBranchFilter}
-            setAdvancedBranchFilter={setAdvancedBranchFilter}
-            paymentStatusFilter={paymentStatusFilter}
-            setPaymentStatusFilter={setPaymentStatusFilter}
-            minAmount={minAmount}
-            setMinAmount={setMinAmount}
-            maxAmount={maxAmount}
-            setMaxAmount={setMaxAmount}
-            customerNameFilter={customerNameFilter}
-            setCustomerNameFilter={setCustomerNameFilter}
-            phoneFilter={phoneFilter}
-            setPhoneFilter={setPhoneFilter}
-            walkinNumberFilter={walkinNumberFilter}
-            setWalkinNumberFilter={setWalkinNumberFilter}
-            hasActiveAdvancedFilters={hasActiveAdvancedFilters}
-            clearAdvancedFilters={clearAdvancedFilters}
-          />
-
-          {/* Stats Row for Advanced Filters Tab */}
-          <Row gutter={16} className="mb-6 mt-6">
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="Total Walk-ins"
-                  value={filteredWalkins.length}
-                  prefix={<TeamOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="In Progress"
-                  value={
-                    filteredWalkins.filter((w) => w.status === "in_progress").length
-                  }
-                  prefix={<ClockCircleOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="Completed"
-                  value={
-                    filteredWalkins.filter((w) => w.status === "completed").length
-                  }
-                  prefix={<CheckCircleOutlined />}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card size="small">
-                <Statistic
-                  title="Total Amount"
-                  value={filteredWalkins.reduce((sum, w) => sum + (w.totalAmount || 0), 0)}
-                  prefix={<DollarOutlined />}
-                  precision={2}
-                  formatter={(value) => `₹${value}`}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          {/* Walkins Table for Advanced Filters Tab */}
-          <Table
-            columns={columns}
-            dataSource={filteredWalkins}
-            rowKey="_id"
-            pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} walk-ins` }}
-            scroll={{ x: 1600, y: "calc(100vh - 400px)" }}
-            size="middle"
-            bordered
-            style={{ whiteSpace: "nowrap" }}
-            className="walkin-table"
-          />
-        </TabPane>
-      </Tabs>
+          </Space>
+        }
+      >
+        <AdvancedFilterPanel
+          branches={branches}
+          filteredWalkins={filteredWalkins}
+          allWalkins={walkins}
+          dateRange={dateRange}
+          setDateRange={setDateRange}
+          advancedStatusFilter={advancedStatusFilter}
+          setAdvancedStatusFilter={setAdvancedStatusFilter}
+          advancedBranchFilter={advancedBranchFilter}
+          setAdvancedBranchFilter={setAdvancedBranchFilter}
+          paymentStatusFilter={paymentStatusFilter}
+          setPaymentStatusFilter={setPaymentStatusFilter}
+          minAmount={minAmount}
+          setMinAmount={setMinAmount}
+          maxAmount={maxAmount}
+          setMaxAmount={setMaxAmount}
+          customerNameFilter={customerNameFilter}
+          setCustomerNameFilter={setCustomerNameFilter}
+          phoneFilter={phoneFilter}
+          setPhoneFilter={setPhoneFilter}
+          walkinNumberFilter={walkinNumberFilter}
+          setWalkinNumberFilter={setWalkinNumberFilter}
+          hasActiveAdvancedFilters={hasActiveAdvancedFilters}
+          clearAdvancedFilters={clearAdvancedFilters}
+        />
+      </Drawer>
 
       {/* QR Modal */}
       {selectedQrData && (
@@ -1465,30 +1552,21 @@ const WalkinList = ({
           onOk={handleSaveStatus}
           okText="Update Status"
           cancelText="Cancel"
-          width={400}
+          width={isMobile ? "100%" : 420}
+          style={isMobile ? { top: 12 } : undefined}
         >
           <div className="py-4">
             <div className="mb-4">
               <span className="text-sm text-gray-600">Current Status: </span>
-              <Tag
-                color={
-                  currentWalkin.status === "completed"
-                    ? "green"
-                    : currentWalkin.status === "cancelled"
-                    ? "red"
-                    : currentWalkin.status === "confirmed"
-                    ? "blue"
-                    : currentWalkin.status === "in_progress"
-                    ? "orange"
-                    : "default"
-                }
-              >
+              <Tag color={getStatusTag(currentWalkin.status).color}>
                 {(currentWalkin.status || "draft").toUpperCase()}
               </Tag>
             </div>
+
             <div className="mb-2">
               <span className="text-sm font-medium">Select New Status:</span>
             </div>
+
             <Select
               value={selectedStatus}
               onChange={setSelectedStatus}
@@ -1521,7 +1599,8 @@ const WalkinList = ({
           onOk={handleSavePayment}
           okText="Update Payment"
           cancelText="Cancel"
-          width={400}
+          width={isMobile ? "100%" : 420}
+          style={isMobile ? { top: 12 } : undefined}
         >
           <div className="py-4 space-y-4">
             <div>
@@ -1541,28 +1620,33 @@ const WalkinList = ({
                 <Select
                   value={discountType}
                   onChange={setDiscountType}
-                  style={{ width: "120px" }}
+                  style={{ width: 140 }}
                   size="large"
                 >
                   <Option value="amount">Amount (₹)</Option>
                   <Option value="percentage">Percentage (%)</Option>
                 </Select>
+
                 <InputNumber
                   value={discountValue}
                   onChange={(value) => setDiscountValue(value || 0)}
                   style={{ flex: 1 }}
                   size="large"
                   min={0}
-                  max={discountType === "percentage" ? 100 : (currentWalkin.subtotal || currentWalkin.totalAmount || 0)}
-                  formatter={(value) => 
-                    discountType === "percentage" 
-                      ? `${value}%` 
+                  max={
+                    discountType === "percentage"
+                      ? 100
+                      : currentWalkin.subtotal || currentWalkin.totalAmount || 0
+                  }
+                  formatter={(value) =>
+                    discountType === "percentage"
+                      ? `${value}%`
                       : `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                   }
                   parser={(value) => value.replace(/₹\s?|%|(,*)/g, "")}
-                  placeholder={discountType === "percentage" ? "Enter %" : "Enter amount"}
                 />
               </div>
+
               {discountValue > 0 && (
                 <div className="text-xs text-gray-500 mt-1">
                   Discount: ₹{calculateDiscountAmount().toFixed(2)}
@@ -1590,9 +1674,10 @@ const WalkinList = ({
                 size="large"
                 min={0}
                 max={calculateTotalAfterDiscount()}
-                formatter={(value) => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+                formatter={(value) =>
+                  `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                }
                 parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
-                placeholder="Enter amount paid"
               />
             </div>
 
@@ -1608,7 +1693,6 @@ const WalkinList = ({
               >
                 <Option value="cash">Cash</Option>
                 <Option value="card">Card</Option>
-                <Option value="upi">UPI</Option>
                 <Option value="online">Online</Option>
               </Select>
             </div>

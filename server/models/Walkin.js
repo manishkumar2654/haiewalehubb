@@ -110,7 +110,7 @@ const walkinSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cash", "card", "upi", "credit"],
+      enum: ["cash", "card", "upi", "credit", "online"],
     },
     amountPaid: {
       type: Number,

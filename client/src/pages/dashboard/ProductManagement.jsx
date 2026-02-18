@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import Table from "../../components/ui/Table";
 import ProductCategoryManagement from "./ProductCategoryManagement";
-import SubcategoryManagement from "./SubcategoryManagement";
+import SubcategoryManagement from "./SubCategoryManagement";
 import { Modal } from "antd";
 
 const ProductManagement = () => {

@@ -126,6 +126,7 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
 
   return (
     <div className="space-y-6">
+      
       {/* Branch Info Card */}
       {branchDetails.name && (
         <Card size="small" className="bg-blue-50 border-blue-200">
@@ -158,14 +159,16 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
           </div>
         </Card>
       )}
-
+   
       {/* Basic Customer Info */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
+        
           <label className="block font-[poppins] text-gray-700 mb-2">
             <User className="w-4 h-4 inline mr-2" />
             Customer Name *
           </label>
+         
           <Input
             value={formData.customerName}
             onChange={(e) =>
@@ -217,7 +220,7 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
           </Select>
         </div>
       </div>
-
+{/* //////////////////////////////////////////////////////// */}
       {/* Seats Selection Section */}
       {formData.branch && (
         <div className="mt-6">
@@ -306,10 +309,10 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
                       </div>
                       {isSelected && (
                         <div className="mt-2 pt-2 border-t">
-                          <div className="text-xs text-gray-600 mb-1">
+                          {/* <div className="text-xs text-gray-600 mb-1">
                             Duration (hours):
-                          </div>
-                          <Radio.Group
+                          </div> */}
+                          {/* <Radio.Group
                             size="small"
                             value={
                               formData.selectedSeats?.find(
@@ -325,7 +328,7 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
                               <Radio value={2}>2h</Radio>
                               <Radio value={3}>3h</Radio>
                             </Space>
-                          </Radio.Group>
+                          </Radio.Group> */}
                         </div>
                       )}
                     </div>
@@ -366,6 +369,7 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
                 <div className="pt-2 border-t mt-2">
                   <div className="flex justify-between font-bold">
                     <span>Total Seats:</span>
+                    
                     <span className="text-green-600">
                       ₹
                       {formData.selectedSeats.reduce(
@@ -380,9 +384,10 @@ const CustomerForm = ({ formData, setFormData, branches, branchDetails }) => {
           )}
         </div>
       )}
-
+{/* ////////////////////////////////////////////// */}
       {/* Customer Address */}
       <div>
+     
         <label className="block font-[poppins] text-gray-700 mb-2">
           <MapPin className="w-4 h-4 inline mr-2" />
           Customer Address *

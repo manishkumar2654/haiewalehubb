@@ -277,9 +277,8 @@ const AppointmentSearch = () => {
         <div className="space-y-2 text-black">
           <p className="text-sm font-medium text-gray-500">{label}</p>
           <p
-            className={`font-semibold ${
-              isCurrency ? "text-rose-600 text-lg" : "text-gray-900"
-            }`}
+            className={`font-semibold ${isCurrency ? "text-rose-600 text-lg" : "text-gray-900"
+              }`}
           >
             {isCurrency ? formatCurrency(value || 0) : value || "N/A"}
           </p>
@@ -327,191 +326,219 @@ const AppointmentSearch = () => {
   };
 
   // Glassmorphism Overlay
-  const GlassmorphismOverlay = () => (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="relative  w-full max-w-4xl">
-        {/* Decorative background elements */}
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-r from-rose-600/20 to-amber-600/20 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-r from-amber-600/20 to-rose-600/20 rounded-full blur-3xl"></div>
+  // const GlassmorphismOverlay = () => (
+  //   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+  //     <div className="relative  w-full max-w-4xl">
+  //       {/* Decorative background elements */}
+  //       <div className="absolute -top-20 -right-20 w-64 h-64 bg-gradient-to-r from-rose-600/20 to-amber-600/20 rounded-full blur-3xl"></div>
+  //       <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-gradient-to-r from-amber-600/20 to-rose-600/20 rounded-full blur-3xl"></div>
 
-        <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+  //       <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden">
+  //         {/* Header */}
+  //         <div className="p-8 text-center bg-gradient-to-r from-rose-900/20 to-amber-900/20 border-b border-white/10">
+  //           <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-rose-600 to-amber-500 rounded-full mb-4">
+  //             <SparklesIcon className="w-8 h-8 text-white" />
+  //           </div>
+  //           <h1 className="text-4xl md:text-5xl font-bold font-[philosopher] mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-amber-200">
+  //             Welcome to Booking System
+  //           </h1>
+  //           <p className="text-lg text-white/80 font-[poppins] max-w-2xl mx-auto">
+  //             Choose how you'd like to proceed with booking management
+  //           </p>
+  //         </div>
+
+  //         {/* Options Grid */}
+  //         <div className="p-8 md:p-12">
+  //           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+  //             {/* Walk-in Booking Option */}
+  //             <div
+  //               className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 cursor-pointer hover:scale-105 ${selectedOption === "walkin"
+  //                 ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-400/50 shadow-2xl shadow-amber-500/20"
+  //                 : "bg-white/5 border-white/10 hover:border-amber-400/30 hover:shadow-xl hover:shadow-amber-500/10"
+  //                 }`}
+  //               onClick={() => handleOptionSelect("walkin")}
+  //             >
+  //               <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+  //                 <Users className="w-6 h-6 text-white" />
+  //               </div>
+
+  //               <div className="mb-6">
+  //                 <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+  //                   <UserPlus className="w-8 h-8 text-white" />
+  //                 </div>
+  //                 <h3 className="text-2xl font-bold font-[philosopher] text-white mb-2">
+  //                   Create Walk-in
+  //                 </h3>
+  //                 <p className="text-white/70 font-[poppins]">
+  //                   Book new walk-in customers directly. Add services, products,
+  //                   and generate instant bills.
+  //                 </p>
+  //               </div>
+
+  //               <div className="space-y-3">
+  //                 <div className="flex items-center text-white/80">
+  //                   <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
+  //                   <span className="font-[poppins] text-sm">
+  //                     Create new customer booking
+  //                   </span>
+  //                 </div>
+  //                 <div className="flex items-center text-white/80">
+  //                   <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
+  //                   <span className="font-[poppins] text-sm">
+  //                     Add multiple services & products
+  //                   </span>
+  //                 </div>
+  //                 <div className="flex items-center text-white/80">
+  //                   <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
+  //                   <span className="font-[poppins] text-sm">
+  //                     Generate instant bills & QR codes
+  //                   </span>
+  //                 </div>
+  //               </div>
+
+  //               <div
+  //                 className={`mt-8 pt-6 border-t ${selectedOption === "walkin"
+  //                   ? "border-amber-400/50"
+  //                   : "border-white/10"
+  //                   }`}
+  //               >
+  //                 <div className="flex items-center justify-between">
+  //                   <span className="text-white font-[poppins] font-medium">
+  //                     Go to Walk-in Booking
+  //                   </span>
+  //                   <ArrowRight
+  //                     className={`w-6 h-6 transition-transform group-hover:translate-x-2 ${selectedOption === "walkin"
+  //                       ? "text-amber-300"
+  //                       : "text-white/50"
+  //                       }`}
+  //                   />
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </div>
+
+  //           {/* Bottom decorative section */}
+  //           <div className="mt-12 pt-8 border-t border-white/10">
+  //             <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+  //               <div className="text-center md:text-left">
+  //                 <p className="text-white/60 font-[poppins] text-sm">
+  //                   Need help choosing? Contact support
+  //                 </p>
+  //               </div>
+  //               <div className="flex items-center gap-4">
+
+  //                 <div className="flex items-center">
+  //                   <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mr-2"></div>
+  //                   <span className="text-white/70 text-sm font-[poppins]">
+  //                     Walk-in
+  //                   </span>
+  //                 </div>
+  //               </div>
+  //             </div>
+  //           </div>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   </div>
+  // );
+
+  const GlassmorphismOverlay = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-4 overflow-y-auto">
+      <div className="relative w-full max-w-4xl">
+
+        {/* Decorative background elements (responsive size) */}
+        <div className="absolute -top-24 -right-24 w-40 h-40 sm:w-64 sm:h-64 bg-gradient-to-r from-rose-600/20 to-amber-600/20 rounded-full blur-3xl"></div>
+        <div className="absolute -bottom-24 -left-24 w-40 h-40 sm:w-64 sm:h-64 bg-gradient-to-r from-amber-600/20 to-rose-600/20 rounded-full blur-3xl"></div>
+
+        <div className="relative bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+
           {/* Header */}
-          <div className="p-8 text-center bg-gradient-to-r from-rose-900/20 to-amber-900/20 border-b border-white/10">
+          <div className="p-6 sm:p-8 text-center bg-gradient-to-r from-rose-900/20 to-amber-900/20 border-b border-white/10">
             <div className="inline-flex items-center justify-center p-3 bg-gradient-to-r from-rose-600 to-amber-500 rounded-full mb-4">
-              <SparklesIcon className="w-8 h-8 text-white" />
+              <SparklesIcon className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold font-[philosopher] mb-4 text-transparent bg-clip-text bg-gradient-to-r from-white to-amber-200">
+
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold font-[philosopher] mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white to-amber-200">
               Welcome to Booking System
             </h1>
-            <p className="text-lg text-white/80 font-[poppins] max-w-2xl mx-auto">
+
+            <p className="text-sm sm:text-base text-white/80 font-[poppins] max-w-2xl mx-auto">
               Choose how you'd like to proceed with booking management
             </p>
           </div>
 
           {/* Options Grid */}
-          <div className="p-8 md:p-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {/* Pre-booked Appointments Option */}
-              <div
-                className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 cursor-pointer hover:scale-105 ${
-                  selectedOption === "prebooked"
-                    ? "bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-400/50 shadow-2xl shadow-blue-500/20"
-                    : "bg-white/5 border-white/10 hover:border-blue-400/30 hover:shadow-xl hover:shadow-blue-500/10"
-                }`}
-                onClick={() => handleOptionSelect("prebooked")}
-              >
-                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center shadow-lg">
-                  <Search className="w-6 h-6 text-white" />
-                </div>
-
-                <div className="mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <Calendar className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="text-2xl font-bold font-[philosopher] text-white mb-2">
-                    Search Pre-booked
-                  </h3>
-                  <p className="text-white/70 font-[poppins]">
-                    Look up existing appointments by ID. View details, update
-                    information, and generate receipts.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Find by Appointment ID
-                    </span>
-                  </div>
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Update appointment details
-                    </span>
-                  </div>
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-blue-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Download PDF receipts
-                    </span>
-                  </div>
-                </div>
-
-                <div
-                  className={`mt-8 pt-6 border-t ${
-                    selectedOption === "prebooked"
-                      ? "border-blue-400/50"
-                      : "border-white/10"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-white font-[poppins] font-medium">
-                      Select this option
-                    </span>
-                    <ArrowRight
-                      className={`w-6 h-6 transition-transform group-hover:translate-x-2 ${
-                        selectedOption === "prebooked"
-                          ? "text-blue-300"
-                          : "text-white/50"
-                      }`}
-                    />
-                  </div>
-                </div>
-              </div>
-
+          <div className="p-6 sm:p-8 md:p-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
               {/* Walk-in Booking Option */}
               <div
-                className={`group relative p-8 rounded-2xl border-2 transition-all duration-300 cursor-pointer hover:scale-105 ${
-                  selectedOption === "walkin"
+                onClick={() => handleOptionSelect("walkin")}
+                className={`group relative p-6 sm:p-8 rounded-2xl border-2 cursor-pointer transition-all duration-300 md:hover:scale-105 
+                ${selectedOption === "walkin"
                     ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20 border-amber-400/50 shadow-2xl shadow-amber-500/20"
                     : "bg-white/5 border-white/10 hover:border-amber-400/30 hover:shadow-xl hover:shadow-amber-500/10"
-                }`}
-                onClick={() => handleOptionSelect("walkin")}
+                  }`}
               >
-                <div className="absolute -top-3 -right-3 w-12 h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-                  <Users className="w-6 h-6 text-white" />
+                <div className="absolute -top-3 -right-3 w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
 
                 <div className="mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                    <UserPlus className="w-8 h-8 text-white" />
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <UserPlus className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
                   </div>
-                  <h3 className="text-2xl font-bold font-[philosopher] text-white mb-2">
+
+                  <h3 className="text-xl sm:text-2xl font-bold font-[philosopher] text-white mb-2">
                     Create Walk-in
                   </h3>
-                  <p className="text-white/70 font-[poppins]">
+
+                  <p className="text-white/70 font-[poppins] text-sm sm:text-base">
                     Book new walk-in customers directly. Add services, products,
                     and generate instant bills.
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Create new customer booking
-                    </span>
-                  </div>
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Add multiple services & products
-                    </span>
-                  </div>
-                  <div className="flex items-center text-white/80">
-                    <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
-                    <span className="font-[poppins] text-sm">
-                      Generate instant bills & QR codes
-                    </span>
-                  </div>
+                <div className="space-y-2 sm:space-y-3">
+                  {[
+                    "Create new customer booking",
+                    "Add multiple services & products",
+                    "Generate instant bills & QR codes",
+                  ].map((text) => (
+                    <div key={text} className="flex items-center text-white/80">
+                      <div className="w-2 h-2 bg-amber-400 rounded-full mr-3"></div>
+                      <span className="font-[poppins] text-sm">{text}</span>
+                    </div>
+                  ))}
                 </div>
 
                 <div
-                  className={`mt-8 pt-6 border-t ${
-                    selectedOption === "walkin"
-                      ? "border-amber-400/50"
-                      : "border-white/10"
-                  }`}
+                  className={`mt-6 sm:mt-8 pt-4 sm:pt-6 border-t ${selectedOption === "walkin"
+                    ? "border-amber-400/50"
+                    : "border-white/10"
+                    }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-white font-[poppins] font-medium">
+                    <span className="text-white font-[poppins] font-medium text-sm sm:text-base">
                       Go to Walk-in Booking
                     </span>
-                    <ArrowRight
-                      className={`w-6 h-6 transition-transform group-hover:translate-x-2 ${
-                        selectedOption === "walkin"
-                          ? "text-amber-300"
-                          : "text-white/50"
-                      }`}
-                    />
+                    <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 text-white/70 group-hover:translate-x-2 transition-transform" />
                   </div>
                 </div>
+
               </div>
             </div>
 
-            {/* Bottom decorative section */}
-            <div className="mt-12 pt-8 border-t border-white/10">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="text-center md:text-left">
-                  <p className="text-white/60 font-[poppins] text-sm">
-                    Need help choosing? Contact support
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mr-2"></div>
-                    <span className="text-white/70 text-sm font-[poppins]">
-                      Pre-booked
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mr-2"></div>
-                    <span className="text-white/70 text-sm font-[poppins]">
-                      Walk-in
-                    </span>
-                  </div>
-                </div>
+            {/* Footer */}
+            <div className="mt-10 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-white/60 font-[poppins] text-sm text-center sm:text-left">
+                Need help choosing? Contact support
+              </p>
+
+              <div className="flex items-center">
+                <div className="w-3 h-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full mr-2"></div>
+                <span className="text-white/70 text-sm font-[poppins]">
+                  Walk-in
+                </span>
               </div>
             </div>
           </div>
@@ -519,6 +546,7 @@ const AppointmentSearch = () => {
       </div>
     </div>
   );
+
 
   // If overlay should be shown, render it
   if (showOverlay && !selectedOption) {
@@ -665,7 +693,7 @@ const AppointmentSearch = () => {
                     <span
                       className={`px-3 py-2 rounded-full text-sm font-semibold ${getPaymentStatusColor(
                         updatedAppointment?.paymentStatus ||
-                          appointment.paymentStatus
+                        appointment.paymentStatus
                       )}`}
                     >
                       {updatedAppointment?.paymentStatus ||

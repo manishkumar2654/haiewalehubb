@@ -102,7 +102,7 @@ const WalkinBooking = () => {
   const fetchBranchStaff = async (branchName) => {
     try {
       const staffRes = await api.get(
-        `/walkins/staff/branch?branch=${branchName}`
+        `/walkins/staff/branch?branch=${branchName}`,
       );
       setAvailableStaff(staffRes.data.data || []);
     } catch (error) {
@@ -124,15 +124,15 @@ const WalkinBooking = () => {
   const calculateTotals = () => {
     const servicesTotal = formData.selectedServices.reduce(
       (sum, service) => sum + (service.price || 0),
-      0
+      0,
     );
     const productsTotal = formData.selectedProducts.reduce(
       (sum, product) => sum + (product.total || 0),
-      0
+      0,
     );
     const seatsTotal = formData.selectedSeats.reduce(
       (sum, seat) => sum + (seat.total || 0),
-      0
+      0,
     );
     const subtotal = servicesTotal + productsTotal + seatsTotal;
     const discountAmount = formData.discount || 0;
@@ -207,7 +207,7 @@ const WalkinBooking = () => {
 
       // ✅ SUCCESS - DO ALL ACTIONS
       message.success(
-        `Walkin #${res.data.data.walkinNumber} created successfully!`
+        `Walkin #${res.data.data.walkinNumber} created successfully!`,
       );
 
       // 1. Reset form
@@ -347,7 +347,9 @@ const WalkinBooking = () => {
                     type="primary"
                     onClick={handleSubmit}
                     disabled={
-                      !formData.customerName || !formData.customerPhone || loading
+                      !formData.customerName ||
+                      !formData.customerPhone ||
+                      loading
                     }
                     loading={loading}
                   >

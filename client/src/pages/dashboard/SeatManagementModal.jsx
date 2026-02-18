@@ -115,6 +115,7 @@ const SeatManagementModal = ({ visible, branch, onClose, onRefresh }) => {
         setSeats(res.data.data);
         calculateStats(res.data.data);
       }
+      
     } catch (err) {
       console.error("Error fetching seats:", err);
       message.error("Failed to load seats");

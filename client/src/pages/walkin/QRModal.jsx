@@ -29,7 +29,7 @@ const QRModal = ({ visible, qrData, onClose, onDownloadPDF }) => {
     try {
       const shareData = {
         title: `Walk-in Receipt: ${qrData.walkinNumber}`,
-        text: `Your walk-in receipt from Luxury Spa & Salon\nWalk-in: ${
+        text: `Your walk-in receipt from Hair Hub Luxury\nWalk-in: ${
           qrData.walkinNumber
         }\nCustomer: ${qrData.customerName}\nAmount: ₹${
           qrData.totalAmount?.toFixed(2) || "0.00"
@@ -389,7 +389,7 @@ const QRModal = ({ visible, qrData, onClose, onDownloadPDF }) => {
         {/* Footer */}
         <div className="text-center pt-4 border-t">
           <p className="text-sm text-gray-600 mb-1">
-            Luxury Spa & Salon • Digital Receipt System
+            Hair Hub Luxury • Digital Receipt System
           </p>
           <p className="text-xs text-gray-400">
             Eco-friendly • Paperless • Instant Delivery

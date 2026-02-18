@@ -1585,7 +1585,7 @@ exports.generatePDF = async (req, res) => {
     doc.pipe(res);
 
     // PDF Content
-    doc.fontSize(20).text("LUXURY SPA & SALON", { align: "center" });
+    doc.fontSize(20).text("Hair Hub Luxury", { align: "center" });
     doc.moveDown(0.5);
     doc.fontSize(16).text("WALK-IN INVOICE", { align: "center" });
     doc.moveDown(1);
@@ -1659,7 +1659,7 @@ exports.generatePDF = async (req, res) => {
 
     // Footer
     doc.fontSize(8);
-    doc.text("Thank you for choosing Luxury SPA & Salon!", { align: "center" });
+    doc.text("Thank you for choosing Hair Hub Luxury!", { align: "center" });
     doc.text("For any queries, contact: 9713326656", { align: "center" });
 
     doc.end();
@@ -1794,7 +1794,7 @@ async function generateWalkinAssets(walkin) {
     doc.pipe(writeStream);
 
     // Simple PDF content
-    doc.fontSize(20).text("LUXURY SPA & SALON", { align: "center" });
+    doc.fontSize(20).text("Hair Hub Luxury", { align: "center" });
     doc.moveDown();
     doc
       .fontSize(16)
@@ -1999,7 +1999,7 @@ exports.downloadViaQR = async (req, res) => {
           </button>
           
           <p class="note">
-            Luxury Spa & Salon<br>
+            Hair Hub Luxury<br>
             Thank you for your visit!
           </p>
         </div>

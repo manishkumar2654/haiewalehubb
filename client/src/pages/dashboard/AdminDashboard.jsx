@@ -58,7 +58,7 @@ const AdminDashboard = () => {
       "branches",
       "rooms",
       "products",
-      "orders",
+
     ],
     [EMPLOYEE_ROLES.MANAGER]: [
       "dashboard",
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
       "branches",
       "rooms",
       "products",
-      "orders",
+
     ],
     [EMPLOYEE_ROLES.RECEPTIONIST]: [
       "dashboard",
@@ -344,11 +344,10 @@ const AdminDashboard = () => {
                   <button
                     key={id}
                     onClick={() => handleTabChange(id)}
-                    className={`flex-1 min-w-[140px] flex items-center justify-center px-5 py-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${
-                      activeTab === id
+                    className={`flex-1 min-w-[140px] flex items-center justify-center px-5 py-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${activeTab === id
                         ? `${bgColor} ${color} shadow-lg scale-[1.02]`
                         : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
+                      }`}
                     aria-pressed={activeTab === id}
                   >
                     {/* Active indicator */}
@@ -358,29 +357,25 @@ const AdminDashboard = () => {
 
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`p-2 rounded-lg ${
-                          activeTab === id ? "bg-white/90" : "bg-gray-100"
-                        } group-hover:scale-110 transition-transform duration-300`}
+                        className={`p-2 rounded-lg ${activeTab === id ? "bg-white/90" : "bg-gray-100"
+                          } group-hover:scale-110 transition-transform duration-300`}
                       >
                         <Icon
-                          className={`h-5 w-5 ${
-                            activeTab === id ? color : "text-gray-500"
-                          }`}
+                          className={`h-5 w-5 ${activeTab === id ? color : "text-gray-500"
+                            }`}
                         />
                       </div>
                       <span
-                        className={`font-medium ${
-                          activeTab === id ? "font-semibold" : ""
-                        }`}
+                        className={`font-medium ${activeTab === id ? "font-semibold" : ""
+                          }`}
                       >
                         {label}
                       </span>
                     </div>
 
                     <ChevronRight
-                      className={`h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
-                        activeTab === id ? color : "text-gray-400"
-                      }`}
+                      className={`h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activeTab === id ? color : "text-gray-400"
+                        }`}
                     />
                   </button>
                 )
@@ -715,17 +710,16 @@ const AdminDashboard = () => {
                               >
                                 <div className="flex items-center">
                                   <div
-                                    className={`w-3 h-3 rounded-full mr-3 ${
-                                      status === "Confirmed"
+                                    className={`w-3 h-3 rounded-full mr-3 ${status === "Confirmed"
                                         ? "bg-green-500"
                                         : status === "Completed"
-                                        ? "bg-blue-500"
-                                        : status === "Pending"
-                                        ? "bg-yellow-500"
-                                        : status === "Cancelled"
-                                        ? "bg-red-500"
-                                        : "bg-gray-500"
-                                    }`}
+                                          ? "bg-blue-500"
+                                          : status === "Pending"
+                                            ? "bg-yellow-500"
+                                            : status === "Cancelled"
+                                              ? "bg-red-500"
+                                              : "bg-gray-500"
+                                      }`}
                                   ></div>
                                   <span className="text-gray-700 capitalize">
                                     {status}
@@ -739,7 +733,7 @@ const AdminDashboard = () => {
                                     (
                                     {Math.round(
                                       (count / (stats.totalAppointments || 1)) *
-                                        100
+                                      100
                                     )}
                                     %)
                                   </span>
@@ -785,7 +779,7 @@ const AdminDashboard = () => {
                                     (
                                     {Math.round(
                                       (count / (stats.totalEmployees || 1)) *
-                                        100
+                                      100
                                     )}
                                     %)
                                   </span>
@@ -819,15 +813,14 @@ const AdminDashboard = () => {
                               >
                                 <div className="flex items-center">
                                   <div
-                                    className={`w-3 h-3 rounded-full mr-3 ${
-                                      status === "Available"
+                                    className={`w-3 h-3 rounded-full mr-3 ${status === "Available"
                                         ? "bg-green-500"
                                         : status === "Booked"
-                                        ? "bg-blue-500"
-                                        : status === "Maintenance"
-                                        ? "bg-red-500"
-                                        : "bg-gray-500"
-                                    }`}
+                                          ? "bg-blue-500"
+                                          : status === "Maintenance"
+                                            ? "bg-red-500"
+                                            : "bg-gray-500"
+                                      }`}
                                   ></div>
                                   <span className="text-gray-700 capitalize">
                                     {status}
@@ -926,15 +919,14 @@ const AdminDashboard = () => {
                               >
                                 <div className="flex items-center">
                                   <div
-                                    className={`h-2 w-2 rounded-full mr-3 ${
-                                      appointment.status === "Confirmed"
+                                    className={`h-2 w-2 rounded-full mr-3 ${appointment.status === "Confirmed"
                                         ? "bg-green-500"
                                         : appointment.status === "Completed"
-                                        ? "bg-blue-500"
-                                        : appointment.status === "Pending"
-                                        ? "bg-yellow-500"
-                                        : "bg-gray-500"
-                                    }`}
+                                          ? "bg-blue-500"
+                                          : appointment.status === "Pending"
+                                            ? "bg-yellow-500"
+                                            : "bg-gray-500"
+                                      }`}
                                   ></div>
                                   <div>
                                     <p className="font-medium text-gray-900">
@@ -955,15 +947,14 @@ const AdminDashboard = () => {
                                     })}
                                   </p>
                                   <span
-                                    className={`text-xs px-2 py-1 rounded-full ${
-                                      appointment.status === "Confirmed"
+                                    className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Confirmed"
                                         ? "bg-green-100 text-green-800"
                                         : appointment.status === "Completed"
-                                        ? "bg-blue-100 text-blue-800"
-                                        : appointment.status === "Pending"
-                                        ? "bg-yellow-100 text-yellow-800"
-                                        : "bg-gray-100 text-gray-800"
-                                    }`}
+                                          ? "bg-blue-100 text-blue-800"
+                                          : appointment.status === "Pending"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : "bg-gray-100 text-gray-800"
+                                      }`}
                                   >
                                     {appointment.status}
                                   </span>
@@ -996,11 +987,10 @@ const AdminDashboard = () => {
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Growth Rate</span>
                         <span
-                          className={`font-semibold ${
-                            stats.growthRate > 0
+                          className={`font-semibold ${stats.growthRate > 0
                               ? "text-green-600"
                               : "text-red-600"
-                          }`}
+                            }`}
                         >
                           {stats.growthRate > 0 ? "↑" : "↓"}{" "}
                           {Math.abs(stats.growthRate || 0)}%

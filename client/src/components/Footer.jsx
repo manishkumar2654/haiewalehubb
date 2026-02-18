@@ -97,13 +97,14 @@ const Footer = () => {
       </div>
 
       {/* Top Image Banner - reduced height */}
-      <section className="relative w-full h-[6vh] min-h-[60px] max-h-[80px] overflow-hidden">
-        <img
-          src="/footerimg.png"
-          alt="Spa treatment"
-          className="w-full h-full object-cover object-center"
-        />
-      </section>
+     <section className="relative w-full h-[30vh] min-h-[180px] max-h-[350px] overflow-hidden">
+  <img
+    src="/hairhubfotter11.png"
+    alt="Hair Hub Banner"
+    className="w-full h-full object-cover object-center"
+  />
+</section>
+
 
       {/* Main Content - reduced padding */}
       <div className="relative py-8 md:py-10">
