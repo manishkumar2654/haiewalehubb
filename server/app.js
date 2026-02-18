@@ -11,7 +11,11 @@ const app = express();
 connectDb();
 app.set("trust proxy", 1);
 // Global middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: ["https://haiewalehubb-1.onrender.com"],
+  }),
+);
 app.use(express.json());
 app.use(compression()); // Enable compression globally (JS/CSS/HTML will be smaller)
 
