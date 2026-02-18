@@ -255,12 +255,12 @@ const UserProfileDashboard = () => {
                 <p className="text-gray-600 mb-4 font-[poppins]">
                   Schedule a new appointment with our professionals
                 </p>
-                <button
+                {/* <button
                   onClick={() => navigate("/appointment")}
                   className="w-full bg-gradient-to-r from-rose-700 to-amber-700 text-white py-2 px-4 rounded-lg hover:from-rose-800 hover:to-amber-800 transition flex items-center justify-center font-[poppins] font-medium"
                 >
                   Book Now
-                </button>
+                </button> */}
               </div>
 
               <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl p-6 border border-white/30">

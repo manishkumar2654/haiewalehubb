@@ -146,13 +146,13 @@ const ServiceSelection = ({
                     <Eye className="w-4 h-4" />
                     Details
                   </button>
-                  <button
+                  {/* <button
                     onClick={() => handleSelectService(service)}
                     className="flex-1 font-[poppins] text-sm py-2.5 bg-gradient-to-r from-rose-700 to-rose-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 shadow-md hover:from-rose-600 hover:to-rose-500 flex items-center justify-center gap-2"
                   >
                     <Sparkles className="w-4 h-4" />
                     Book Now
-                  </button>
+                  </button> */}
                 </div>
               </div>
             </div>

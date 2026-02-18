@@ -250,11 +250,11 @@ const ServicesSection = () => {
 
                       {/* Action Buttons */}
                       <div className="flex gap-2">
-                        <Link to={`/appointment`} className="flex-1">
+                        {/* <Link to={`/appointment`} className="flex-1">
                           <button className="w-full font-[poppins] text-xs py-2.5 bg-gradient-to-r from-rose-700 to-rose-600 text-white rounded-lg hover:shadow-lg transition-all duration-300 shadow-md hover:from-rose-600 hover:to-rose-500">
                             Book Now
                           </button>
-                        </Link>
+                        </Link> */}
                         <Link to={`/service/${service._id}`} className="flex-1">
                           <button className="w-full font-[poppins] text-xs py-2.5 bg-white border border-rose-700 text-rose-700 rounded-lg hover:bg-rose-700 hover:text-white transition-all duration-300 shadow-sm">
                             Details
