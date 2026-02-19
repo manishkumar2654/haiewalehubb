@@ -945,7 +945,7 @@ const WalkinList = ({
 
       {
         key: "m1",
-        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGEeeeeeeeeeeeeeeeeeee</b>,
         disabled: true,
       },
       {
