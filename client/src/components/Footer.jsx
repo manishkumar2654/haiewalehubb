@@ -82,7 +82,7 @@ const Footer = () => {
   const quickLinks = [
     { name: "Home", path: "/", icon: Home },
     { name: "Services", path: "/appointment", icon: Scissors },
-    { name: "Book Appointments", path: "/appointment", icon: Calendar },
+    // { name: "Book Appointments", path: "/appointment", icon: Calendar },
     // { name: "About Us", path: "/about", icon: User },
     // { name: "Contact Us", path: "/contact", icon: Phone },
     // { name: "Terms & Conditions", path: "/terms", icon: Shield },
