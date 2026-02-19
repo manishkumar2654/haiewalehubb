@@ -4,27 +4,24 @@ import api from "../../services/api";
 import Card from "../../components/ui/Card";
 import {
   Users,
-  ShoppingCart,
   TrendingUp,
   DollarSign,
   Package,
   ShoppingBag,
   Home,
   Scissors,
-  Settings,
   Building,
   ChevronRight,
   BarChart3,
   Shield,
   Briefcase,
-  MapPin,
   Layers,
-  Activity,
 } from "lucide-react";
+
 import AdminEmployeeManagement from "./AdminEmployeeManagement";
 import ServiceManagement from "./ServiceManagement";
 import RoomManagement from "./RoomManagement";
-// ✅ removed appointment import
+// ❌ Removed Appointments
 // import AdminAppointmentManagement from "./AdminAppointmentManagement";
 import ProductManagement from "./ProductManagement";
 import OrderManagement from "./OrderManagement";
@@ -38,17 +35,18 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [direction, setDirection] = useState("right"); // Animation direction
+
   const [refreshKeys, setRefreshKeys] = useState({
     services: 0,
     products: 0,
     orders: 0,
-    // ✅ removed appointments
+    // ❌ appointments removed
     employee: 0,
     rooms: 0,
     branches: 0,
   });
 
-  // ✅ Configurable Role-Based Access Control (Appointments removed)
+  // ✅ Role-Based Access Control (Appointments removed)
   const roleBasedTabs = {
     [ROLES.ADMIN]: [
       "dashboard",
@@ -78,7 +76,7 @@ const AdminDashboard = () => {
     default: ["dashboard"],
   };
 
-  // All available tabs with their configurations (Appointments removed)
+  // All available tabs (Appointments removed)
   const allTabs = [
     {
       id: "dashboard",
@@ -138,7 +136,6 @@ const AdminDashboard = () => {
     },
   ];
 
-  // Get user's actual role
   const getUserRole = () => {
     if (!user) return null;
     if (user.role === ROLES.EMPLOYEE && user.employeeRole) {
@@ -147,7 +144,6 @@ const AdminDashboard = () => {
     return user.role;
   };
 
-  // Get accessible tabs for current user
   const getAccessibleTabs = () => {
     const userRole = getUserRole();
     if (!userRole) return allTabs.filter((tab) => tab.id === "dashboard");
@@ -158,7 +154,6 @@ const AdminDashboard = () => {
 
   const accessibleTabs = getAccessibleTabs();
 
-  // Handle tab change with animation
   const handleTabChange = (tabId) => {
     if (activeTab === tabId) return;
 
@@ -192,7 +187,7 @@ const AdminDashboard = () => {
         console.log("📈 Received Stats:", {
           totalUsers: res.data.data.totalUsers,
           totalEmployees: res.data.data.totalEmployees,
-          // ✅ appointments removed from debug usage (safe)
+          // ❌ totalAppointments removed from UI usage
           totalOrders: res.data.data.totalOrders,
           totalProducts: res.data.data.totalProducts,
           totalServices: res.data.data.totalServices,
@@ -223,7 +218,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Get user's display role for UI
   const getUserDisplayRole = () => {
     if (!user) return "";
     if (user.role === ROLES.EMPLOYEE && user.employeeRole) {
@@ -238,7 +232,6 @@ const AdminDashboard = () => {
     }
   }, [activeTab]);
 
-  // Animation classes based on direction
   const getAnimationClass = (tabId) => {
     if (activeTab === tabId) {
       return "opacity-100 scale-100 translate-x-0";
@@ -248,7 +241,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Show access denied if no accessible tabs
   if (accessibleTabs.length === 0) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50/30 via-white to-amber-50/30 pt-10">
@@ -309,7 +301,7 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Tab Navigation - Improved Design */}
+          {/* Tab Navigation */}
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-rose-200/50 shadow-lg shadow-rose-100/20 p-1 mb-8">
             <div className="flex flex-wrap gap-1">
               {accessibleTabs.map(({ id, label, icon: Icon, color, bgColor }) => (
@@ -355,7 +347,7 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* Content Area with Smooth Transitions */}
+        {/* Content */}
         <div className="relative min-h-[60vh] overflow-hidden">
           {/* Dashboard Panel */}
           <div
@@ -395,7 +387,9 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-8">
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Connection Issue</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      Connection Issue
+                    </h3>
                     <p className="text-gray-600 mb-4">{error}</p>
                     <button
                       onClick={fetchStats}
@@ -522,7 +516,7 @@ const AdminDashboard = () => {
                       progress: Math.min(stats.occupancyRate || 0, 100),
                     },
                   ]
-                    .filter((stat) => stat.show)
+                    .filter((s) => s.show)
                     .map(({ name, value, icon: Icon, color, bgColor, borderColor, progress }) => (
                       <div
                         key={name}
@@ -669,9 +663,8 @@ const AdminDashboard = () => {
                   )}
                 </div>
 
-                {/* Recent Activity Section (Recent Appointments removed) */}
+                {/* Quick Summary (Today's Appointments removed) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                  {/* Quick Stats Summary */}
                   <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl border border-rose-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
                       <BarChart3 className="h-5 w-5 mr-2 text-rose-600" />
@@ -680,7 +673,9 @@ const AdminDashboard = () => {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Total Users</span>
-                        <span className="font-semibold text-gray-900">{stats.totalUsers || 0}</span>
+                        <span className="font-semibold text-gray-900">
+                          {stats.totalUsers || 0}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Total Revenue</span>
@@ -690,17 +685,26 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Growth Rate</span>
-                        <span className={`font-semibold ${stats.growthRate > 0 ? "text-green-600" : "text-red-600"}`}>
-                          {stats.growthRate > 0 ? "↑" : "↓"} {Math.abs(stats.growthRate || 0)}%
+                        <span
+                          className={`font-semibold ${
+                            stats.growthRate > 0 ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {stats.growthRate > 0 ? "↑" : "↓"}{" "}
+                          {Math.abs(stats.growthRate || 0)}%
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Conversion Rate</span>
-                        <span className="font-semibold text-emerald-700">{stats.conversionRate || 0}%</span>
+                        <span className="font-semibold text-emerald-700">
+                          {stats.conversionRate || 0}%
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Occupancy Rate</span>
-                        <span className="font-semibold text-indigo-700">{stats.occupancyRate || 0}%</span>
+                        <span className="font-semibold text-indigo-700">
+                          {stats.occupancyRate || 0}%
+                        </span>
                       </div>
                     </div>
 
@@ -718,18 +722,12 @@ const AdminDashboard = () => {
                     </div>
                   </div>
 
-                  {/* ✅ Empty placeholder to keep layout same (no extra features added) */}
+                  {/* Empty card to keep layout balanced (no appointment data) */}
                   <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                        <Activity className="h-5 w-5 mr-2 text-rose-600" />
-                        Activity
-                      </h3>
-                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                        Overview
-                      </span>
-                    </div>
-                    <p className="text-gray-600 text-sm">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      Overview
+                    </h3>
+                    <p className="text-sm text-gray-600">
                       Dashboard insights will appear here as data grows.
                     </p>
                   </div>
@@ -738,13 +736,13 @@ const AdminDashboard = () => {
             ) : null}
           </div>
 
-          {/* Other Panels with Smooth Transitions */}
+          {/* Other Panels */}
           {accessibleTabs.map((tab) => {
             if (tab.id === "dashboard") return null;
 
             const Component = {
               employee: AdminEmployeeManagement,
-              // ✅ removed appointments mapping
+              // ❌ appointments removed
               services: ServiceManagement,
               branches: BranchManagement,
               rooms: RoomManagement,
