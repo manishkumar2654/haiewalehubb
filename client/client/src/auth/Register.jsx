@@ -70,9 +70,9 @@ const Register = () => {
           )}
 
           {/* Google Login Button */}
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <GoogleLoginButton onError={handleGoogleError} />
-          </div>
+          </div> */}
 
           {/* Divider */}
           <div className="relative mb-6">
