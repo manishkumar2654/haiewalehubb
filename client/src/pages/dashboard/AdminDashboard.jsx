@@ -9,7 +9,6 @@ import {
   DollarSign,
   Package,
   ShoppingBag,
-  Calendar,
   Home,
   Scissors,
   Settings,
@@ -25,7 +24,8 @@ import {
 import AdminEmployeeManagement from "./AdminEmployeeManagement";
 import ServiceManagement from "./ServiceManagement";
 import RoomManagement from "./RoomManagement";
-import AdminAppointmentManagement from "./AdminAppointmentManagement";
+// ✅ removed appointment import
+// import AdminAppointmentManagement from "./AdminAppointmentManagement";
 import ProductManagement from "./ProductManagement";
 import OrderManagement from "./OrderManagement";
 import BranchManagement from "./BranchManagement";
@@ -42,46 +42,43 @@ const AdminDashboard = () => {
     services: 0,
     products: 0,
     orders: 0,
-    appointments: 0,
+    // ✅ removed appointments
     employee: 0,
     rooms: 0,
     branches: 0,
   });
 
-  // ✅ Configurable Role-Based Access Control
+  // ✅ Configurable Role-Based Access Control (Appointments removed)
   const roleBasedTabs = {
     [ROLES.ADMIN]: [
       "dashboard",
-      "appointments",
       "employee",
       "services",
       "branches",
       "rooms",
       "products",
-
+      "orders",
     ],
     [EMPLOYEE_ROLES.MANAGER]: [
       "dashboard",
-      "appointments",
       "employee",
       "services",
       "branches",
       "rooms",
       "products",
-
+      "orders",
     ],
     [EMPLOYEE_ROLES.RECEPTIONIST]: [
       "dashboard",
-      "appointments",
       "services",
       "branches",
       "rooms",
     ],
-    [EMPLOYEE_ROLES.THERAPIST]: ["dashboard", "appointments"],
+    [EMPLOYEE_ROLES.THERAPIST]: ["dashboard"],
     default: ["dashboard"],
   };
 
-  // All available tabs with their configurations
+  // All available tabs with their configurations (Appointments removed)
   const allTabs = [
     {
       id: "dashboard",
@@ -90,14 +87,6 @@ const AdminDashboard = () => {
       description: "System overview and statistics",
       color: "text-blue-600",
       bgColor: "bg-blue-100",
-    },
-    {
-      id: "appointments",
-      label: "Appointments",
-      icon: Calendar,
-      description: "Manage all appointments",
-      color: "text-purple-600",
-      bgColor: "bg-purple-100",
     },
     {
       id: "employee",
@@ -173,25 +162,18 @@ const AdminDashboard = () => {
   const handleTabChange = (tabId) => {
     if (activeTab === tabId) return;
 
-    // Determine animation direction based on current index
-    const currentIndex = accessibleTabs.findIndex(
-      (tab) => tab.id === activeTab
-    );
+    const currentIndex = accessibleTabs.findIndex((tab) => tab.id === activeTab);
     const newIndex = accessibleTabs.findIndex((tab) => tab.id === tabId);
 
-    if (newIndex > currentIndex) {
-      setDirection("left");
-    } else {
-      setDirection("right");
-    }
+    if (newIndex > currentIndex) setDirection("left");
+    else setDirection("right");
 
     setActiveTab(tabId);
 
-    // Refresh the target tab when switching to it
     if (tabId !== "dashboard") {
       setRefreshKeys((prev) => ({
         ...prev,
-        [tabId]: prev[tabId] + 1,
+        [tabId]: (prev[tabId] || 0) + 1,
       }));
     }
   };
@@ -200,21 +182,17 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       console.log("📊 Fetching dashboard stats...");
-
-      // ✅ YEH CORRECT API ENDPOINT HAI
       const res = await api.get("/admin/stats");
-
       console.log("✅ Stats API Response:", res.data);
 
       if (res.data.success && res.data.data) {
         setStats(res.data.data);
         setError(null);
 
-        // Debug: Check all received stats
         console.log("📈 Received Stats:", {
           totalUsers: res.data.data.totalUsers,
           totalEmployees: res.data.data.totalEmployees,
-          totalAppointments: res.data.data.totalAppointments,
+          // ✅ appointments removed from debug usage (safe)
           totalOrders: res.data.data.totalOrders,
           totalProducts: res.data.data.totalProducts,
           totalServices: res.data.data.totalServices,
@@ -238,9 +216,7 @@ const AdminDashboard = () => {
       if (err.response?.status === 403) {
         setError("FORBIDDEN");
       } else {
-        setError(
-          err.response?.data?.message || "Failed to load dashboard stats"
-        );
+        setError(err.response?.data?.message || "Failed to load dashboard stats");
       }
     } finally {
       setLoading(false);
@@ -267,11 +243,8 @@ const AdminDashboard = () => {
     if (activeTab === tabId) {
       return "opacity-100 scale-100 translate-x-0";
     } else {
-      if (direction === "right") {
-        return "opacity-0 scale-95 -translate-x-full absolute";
-      } else {
-        return "opacity-0 scale-95 translate-x-full absolute";
-      }
+      if (direction === "right") return "opacity-0 scale-95 -translate-x-full absolute";
+      return "opacity-0 scale-95 translate-x-full absolute";
     }
   };
 
@@ -339,47 +312,45 @@ const AdminDashboard = () => {
           {/* Tab Navigation - Improved Design */}
           <div className="bg-white/80 backdrop-blur-lg rounded-2xl border border-rose-200/50 shadow-lg shadow-rose-100/20 p-1 mb-8">
             <div className="flex flex-wrap gap-1">
-              {accessibleTabs.map(
-                ({ id, label, icon: Icon, color, bgColor }) => (
-                  <button
-                    key={id}
-                    onClick={() => handleTabChange(id)}
-                    className={`flex-1 min-w-[140px] flex items-center justify-center px-5 py-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${activeTab === id
-                        ? `${bgColor} ${color} shadow-lg scale-[1.02]`
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-                      }`}
-                    aria-pressed={activeTab === id}
-                  >
-                    {/* Active indicator */}
-                    {activeTab === id && (
-                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-600 to-amber-600"></div>
-                    )}
+              {accessibleTabs.map(({ id, label, icon: Icon, color, bgColor }) => (
+                <button
+                  key={id}
+                  onClick={() => handleTabChange(id)}
+                  className={`flex-1 min-w-[140px] flex items-center justify-center px-5 py-4 rounded-xl transition-all duration-300 group relative overflow-hidden ${
+                    activeTab === id
+                      ? `${bgColor} ${color} shadow-lg scale-[1.02]`
+                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                  }`}
+                  aria-pressed={activeTab === id}
+                >
+                  {activeTab === id && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-600 to-amber-600"></div>
+                  )}
 
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`p-2 rounded-lg ${activeTab === id ? "bg-white/90" : "bg-gray-100"
-                          } group-hover:scale-110 transition-transform duration-300`}
-                      >
-                        <Icon
-                          className={`h-5 w-5 ${activeTab === id ? color : "text-gray-500"
-                            }`}
-                        />
-                      </div>
-                      <span
-                        className={`font-medium ${activeTab === id ? "font-semibold" : ""
-                          }`}
-                      >
-                        {label}
-                      </span>
-                    </div>
-
-                    <ChevronRight
-                      className={`h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${activeTab === id ? color : "text-gray-400"
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`p-2 rounded-lg ${
+                        activeTab === id ? "bg-white/90" : "bg-gray-100"
+                      } group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <Icon
+                        className={`h-5 w-5 ${
+                          activeTab === id ? color : "text-gray-500"
                         }`}
-                    />
-                  </button>
-                )
-              )}
+                      />
+                    </div>
+                    <span className={`font-medium ${activeTab === id ? "font-semibold" : ""}`}>
+                      {label}
+                    </span>
+                  </div>
+
+                  <ChevronRight
+                    className={`h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+                      activeTab === id ? color : "text-gray-400"
+                    }`}
+                  />
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -388,18 +359,13 @@ const AdminDashboard = () => {
         <div className="relative min-h-[60vh] overflow-hidden">
           {/* Dashboard Panel */}
           <div
-            className={`transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${getAnimationClass(
-              "dashboard"
-            )}`}
+            className={`transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${getAnimationClass("dashboard")}`}
             aria-hidden={activeTab !== "dashboard"}
           >
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="bg-white/80 rounded-2xl p-6 animate-pulse"
-                  >
+                  <div key={i} className="bg-white/80 rounded-2xl p-6 animate-pulse">
                     <div className="h-8 bg-gray-200 rounded-lg mb-4"></div>
                     <div className="h-24 bg-gray-200 rounded-xl"></div>
                   </div>
@@ -429,9 +395,7 @@ const AdminDashboard = () => {
               <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-8">
                 <div className="flex items-center justify-center h-64">
                   <div className="text-center">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      Connection Issue
-                    </h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">Connection Issue</h3>
                     <p className="text-gray-600 mb-4">{error}</p>
                     <button
                       onClick={fetchStats}
@@ -444,7 +408,7 @@ const AdminDashboard = () => {
               </div>
             ) : stats ? (
               <>
-                {/* Stats Cards Grid */}
+                {/* Stats Cards Grid (Appointments removed) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
                   {[
                     {
@@ -455,10 +419,7 @@ const AdminDashboard = () => {
                       bgColor: "from-blue-100 to-cyan-100",
                       borderColor: "border-blue-200",
                       show: true,
-                      progress: Math.min(
-                        ((stats.totalUsers || 0) / 100) * 100,
-                        100
-                      ), // Progress calculation
+                      progress: Math.min(((stats.totalUsers || 0) / 100) * 100, 100),
                     },
                     {
                       name: "Total Employees",
@@ -468,25 +429,7 @@ const AdminDashboard = () => {
                       bgColor: "from-green-100 to-emerald-100",
                       borderColor: "border-green-200",
                       show: accessibleTabs.some((tab) => tab.id === "employee"),
-                      progress: Math.min(
-                        ((stats.totalEmployees || 0) / 20) * 100,
-                        100
-                      ),
-                    },
-                    {
-                      name: "Total Appointments",
-                      value: stats.totalAppointments || 0,
-                      icon: Calendar,
-                      color: "text-purple-600",
-                      bgColor: "from-purple-100 to-violet-100",
-                      borderColor: "border-purple-200",
-                      show: accessibleTabs.some(
-                        (tab) => tab.id === "appointments"
-                      ),
-                      progress: Math.min(
-                        ((stats.totalAppointments || 0) / 50) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalEmployees || 0) / 20) * 100, 100),
                     },
                     {
                       name: "Total Orders",
@@ -496,10 +439,7 @@ const AdminDashboard = () => {
                       bgColor: "from-emerald-100 to-green-100",
                       borderColor: "border-emerald-200",
                       show: accessibleTabs.some((tab) => tab.id === "orders"),
-                      progress: Math.min(
-                        ((stats.totalOrders || 0) / 50) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalOrders || 0) / 50) * 100, 100),
                     },
                     {
                       name: "Total Products",
@@ -509,10 +449,7 @@ const AdminDashboard = () => {
                       bgColor: "from-orange-100 to-amber-100",
                       borderColor: "border-orange-200",
                       show: accessibleTabs.some((tab) => tab.id === "products"),
-                      progress: Math.min(
-                        ((stats.totalProducts || 0) / 50) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalProducts || 0) / 50) * 100, 100),
                     },
                     {
                       name: "Total Services",
@@ -522,10 +459,7 @@ const AdminDashboard = () => {
                       bgColor: "from-pink-100 to-rose-100",
                       borderColor: "border-pink-200",
                       show: accessibleTabs.some((tab) => tab.id === "services"),
-                      progress: Math.min(
-                        ((stats.totalServices || 0) / 50) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalServices || 0) / 50) * 100, 100),
                     },
                     {
                       name: "Total Branches",
@@ -535,10 +469,7 @@ const AdminDashboard = () => {
                       bgColor: "from-cyan-100 to-blue-100",
                       borderColor: "border-cyan-200",
                       show: accessibleTabs.some((tab) => tab.id === "branches"),
-                      progress: Math.min(
-                        ((stats.totalBranches || 0) / 5) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalBranches || 0) / 5) * 100, 100),
                     },
                     {
                       name: "Total Rooms",
@@ -548,10 +479,7 @@ const AdminDashboard = () => {
                       bgColor: "from-amber-100 to-orange-100",
                       borderColor: "border-amber-200",
                       show: accessibleTabs.some((tab) => tab.id === "rooms"),
-                      progress: Math.min(
-                        ((stats.totalRooms || 0) / 20) * 100,
-                        100
-                      ),
+                      progress: Math.min(((stats.totalRooms || 0) / 20) * 100, 100),
                     },
                     {
                       name: "Revenue",
@@ -567,50 +495,19 @@ const AdminDashboard = () => {
                       name: "Growth Rate",
                       value: `${stats.growthRate || 0}%`,
                       icon: TrendingUp,
-                      color:
-                        stats.growthRate > 0
-                          ? "text-green-600"
-                          : "text-red-600",
-                      bgColor:
-                        stats.growthRate > 0
-                          ? "from-green-100 to-emerald-100"
-                          : "from-red-100 to-pink-100",
-                      borderColor:
-                        stats.growthRate > 0
-                          ? "border-green-200"
-                          : "border-red-200",
+                      color: stats.growthRate > 0 ? "text-green-600" : "text-red-600",
+                      bgColor: stats.growthRate > 0 ? "from-green-100 to-emerald-100" : "from-red-100 to-pink-100",
+                      borderColor: stats.growthRate > 0 ? "border-green-200" : "border-red-200",
                       show: true,
                       progress: Math.min(Math.abs(stats.growthRate || 0), 100),
-                    },
-                    {
-                      name: "Today's Appointments",
-                      value: stats.todayAppointments || 0,
-                      icon: Calendar,
-                      color: "text-rose-600",
-                      bgColor: "from-rose-100 to-pink-100",
-                      borderColor: "border-rose-200",
-                      show: true,
-                      progress: Math.min(
-                        ((stats.todayAppointments || 0) / 20) * 100,
-                        100
-                      ),
                     },
                     {
                       name: "Conversion Rate",
                       value: `${stats.conversionRate || 0}%`,
                       icon: BarChart3,
-                      color:
-                        (stats.conversionRate || 0) > 50
-                          ? "text-teal-600"
-                          : "text-amber-600",
-                      bgColor:
-                        (stats.conversionRate || 0) > 50
-                          ? "from-teal-100 to-emerald-100"
-                          : "from-amber-100 to-orange-100",
-                      borderColor:
-                        (stats.conversionRate || 0) > 50
-                          ? "border-teal-200"
-                          : "border-amber-200",
+                      color: (stats.conversionRate || 0) > 50 ? "text-teal-600" : "text-amber-600",
+                      bgColor: (stats.conversionRate || 0) > 50 ? "from-teal-100 to-emerald-100" : "from-amber-100 to-orange-100",
+                      borderColor: (stats.conversionRate || 0) > 50 ? "border-teal-200" : "border-amber-200",
                       show: true,
                       progress: Math.min(stats.conversionRate || 0, 100),
                     },
@@ -626,345 +523,154 @@ const AdminDashboard = () => {
                     },
                   ]
                     .filter((stat) => stat.show)
-                    .map(
-                      ({
-                        name,
-                        value,
-                        icon: Icon,
-                        color,
-                        bgColor,
-                        borderColor,
-                        progress,
-                      }) => (
-                        <div
-                          key={name}
-                          className={`bg-gradient-to-br ${bgColor} border ${borderColor} rounded-2xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer`}
-                          onClick={() => {
-                            // Navigate to relevant tab if clicked
-                            const tabMap = {
-                              "Total Employees": "employee",
-                              "Total Appointments": "appointments",
-                              "Total Orders": "orders",
-                              "Total Products": "products",
-                              "Total Services": "services",
-                              "Total Branches": "branches",
-                              "Total Rooms": "rooms",
-                            };
-                            if (tabMap[name]) {
-                              handleTabChange(tabMap[name]);
-                            }
-                          }}
-                        >
-                          <div className="flex items-start justify-between mb-4">
-                            <div
-                              className={`p-3 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm ${color}`}
-                            >
-                              <Icon className="h-6 w-6" />
-                            </div>
-                            <div className="text-xs font-medium text-gray-500 bg-white/70 px-2 py-1 rounded-full">
-                              Live
-                            </div>
+                    .map(({ name, value, icon: Icon, color, bgColor, borderColor, progress }) => (
+                      <div
+                        key={name}
+                        className={`bg-gradient-to-br ${bgColor} border ${borderColor} rounded-2xl p-5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer`}
+                        onClick={() => {
+                          const tabMap = {
+                            "Total Employees": "employee",
+                            "Total Orders": "orders",
+                            "Total Products": "products",
+                            "Total Services": "services",
+                            "Total Branches": "branches",
+                            "Total Rooms": "rooms",
+                          };
+                          if (tabMap[name]) handleTabChange(tabMap[name]);
+                        }}
+                      >
+                        <div className="flex items-start justify-between mb-4">
+                          <div className={`p-3 rounded-xl bg-white/80 backdrop-blur-sm shadow-sm ${color}`}>
+                            <Icon className="h-6 w-6" />
                           </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-600 mb-1">
-                              {name}
-                            </p>
-                            <p className={`text-2xl font-bold ${color}`}>
-                              {value}
-                            </p>
-                          </div>
-                          <div className="mt-4 pt-3 border-t border-white/30">
-                            <div className="h-2 bg-white/50 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full transition-all duration-700"
-                                style={{ width: `${progress}%` }}
-                              ></div>
-                            </div>
+                          <div className="text-xs font-medium text-gray-500 bg-white/70 px-2 py-1 rounded-full">
+                            Live
                           </div>
                         </div>
-                      )
-                    )}
+                        <div>
+                          <p className="text-sm font-medium text-gray-600 mb-1">{name}</p>
+                          <p className={`text-2xl font-bold ${color}`}>{value}</p>
+                        </div>
+                        <div className="mt-4 pt-3 border-t border-white/30">
+                          <div className="h-2 bg-white/50 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-rose-500 to-amber-500 rounded-full transition-all duration-700"
+                              style={{ width: `${progress}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                 </div>
 
-                {/* Additional Stats Panels */}
+                {/* Additional Stats Panels (Appointment panels removed) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                  {/* Appointment Status Breakdown */}
-                  {stats.appointmentStatus &&
-                    Object.keys(stats.appointmentStatus).length > 0 && (
-                      <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <Activity className="h-5 w-5 mr-2 text-rose-600" />
-                            Appointment Status
-                          </h3>
-                          <span className="text-xs font-medium text-rose-700 bg-rose-100 px-3 py-1 rounded-full">
-                            {stats.totalAppointments || 0} Total
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          {Object.entries(stats.appointmentStatus).map(
-                            ([status, count]) => (
-                              <div
-                                key={status}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <div
-                                    className={`w-3 h-3 rounded-full mr-3 ${status === "Confirmed"
-                                        ? "bg-green-500"
-                                        : status === "Completed"
-                                          ? "bg-blue-500"
-                                          : status === "Pending"
-                                            ? "bg-yellow-500"
-                                            : status === "Cancelled"
-                                              ? "bg-red-500"
-                                              : "bg-gray-500"
-                                      }`}
-                                  ></div>
-                                  <span className="text-gray-700 capitalize">
-                                    {status}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {count}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    (
-                                    {Math.round(
-                                      (count / (stats.totalAppointments || 1)) *
-                                      100
-                                    )}
-                                    %)
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    )}
-
                   {/* Employee Roles Breakdown */}
-                  {stats.employeeRoles &&
-                    Object.keys(stats.employeeRoles).length > 0 && (
-                      <div className="bg-white rounded-2xl shadow-lg border border-emerald-200 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <Users className="h-5 w-5 mr-2 text-emerald-600" />
-                            Employee Roles
-                          </h3>
-                          <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
-                            {stats.totalEmployees || 0} Employees
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          {Object.entries(stats.employeeRoles).map(
-                            ([role, count]) => (
-                              <div
-                                key={role}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <div className="w-3 h-3 rounded-full mr-3 bg-gradient-to-r from-emerald-500 to-green-500"></div>
-                                  <span className="text-gray-700 capitalize">
-                                    {role}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {count}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    (
-                                    {Math.round(
-                                      (count / (stats.totalEmployees || 1)) *
-                                      100
-                                    )}
-                                    %)
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
+                  {stats.employeeRoles && Object.keys(stats.employeeRoles).length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-lg border border-emerald-200 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                          <Users className="h-5 w-5 mr-2 text-emerald-600" />
+                          Employee Roles
+                        </h3>
+                        <span className="text-xs font-medium text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                          {stats.totalEmployees || 0} Employees
+                        </span>
                       </div>
-                    )}
+                      <div className="space-y-3">
+                        {Object.entries(stats.employeeRoles).map(([role, count]) => (
+                          <div key={role} className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 rounded-full mr-3 bg-gradient-to-r from-emerald-500 to-green-500"></div>
+                              <span className="text-gray-700 capitalize">{role}</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium text-gray-900">{count}</span>
+                              <span className="text-xs text-gray-500">
+                                ({Math.round((count / (stats.totalEmployees || 1)) * 100)}%)
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Room Status Breakdown */}
-                  {stats.roomStatus &&
-                    Object.keys(stats.roomStatus).length > 0 && (
-                      <div className="bg-white rounded-2xl shadow-lg border border-amber-200 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <Layers className="h-5 w-5 mr-2 text-amber-600" />
-                            Room Status
-                          </h3>
-                          <span className="text-xs font-medium text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
-                            {stats.totalRooms || 0} Rooms
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          {Object.entries(stats.roomStatus).map(
-                            ([status, count]) => (
-                              <div
-                                key={status}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <div
-                                    className={`w-3 h-3 rounded-full mr-3 ${status === "Available"
-                                        ? "bg-green-500"
-                                        : status === "Booked"
-                                          ? "bg-blue-500"
-                                          : status === "Maintenance"
-                                            ? "bg-red-500"
-                                            : "bg-gray-500"
-                                      }`}
-                                  ></div>
-                                  <span className="text-gray-700 capitalize">
-                                    {status}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {count}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    (
-                                    {Math.round(
-                                      (count / (stats.totalRooms || 1)) * 100
-                                    )}
-                                    %)
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
+                  {stats.roomStatus && Object.keys(stats.roomStatus).length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-lg border border-amber-200 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                          <Layers className="h-5 w-5 mr-2 text-amber-600" />
+                          Room Status
+                        </h3>
+                        <span className="text-xs font-medium text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
+                          {stats.totalRooms || 0} Rooms
+                        </span>
                       </div>
-                    )}
+                      <div className="space-y-3">
+                        {Object.entries(stats.roomStatus).map(([status, count]) => (
+                          <div key={status} className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div
+                                className={`w-3 h-3 rounded-full mr-3 ${
+                                  status === "Available"
+                                    ? "bg-green-500"
+                                    : status === "Booked"
+                                    ? "bg-blue-500"
+                                    : status === "Maintenance"
+                                    ? "bg-red-500"
+                                    : "bg-gray-500"
+                                }`}
+                              ></div>
+                              <span className="text-gray-700 capitalize">{status}</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium text-gray-900">{count}</span>
+                              <span className="text-xs text-gray-500">
+                                ({Math.round((count / (stats.totalRooms || 1)) * 100)}%)
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Service Categories */}
-                  {stats.serviceCategories &&
-                    Object.keys(stats.serviceCategories).length > 0 && (
-                      <div className="bg-white rounded-2xl shadow-lg border border-pink-200 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <Scissors className="h-5 w-5 mr-2 text-pink-600" />
-                            Service Categories
-                          </h3>
-                          <span className="text-xs font-medium text-pink-700 bg-pink-100 px-3 py-1 rounded-full">
-                            {stats.totalServices || 0} Services
-                          </span>
-                        </div>
-                        <div className="space-y-3">
-                          {Object.entries(stats.serviceCategories).map(
-                            ([category, count]) => (
-                              <div
-                                key={category}
-                                className="flex items-center justify-between"
-                              >
-                                <div className="flex items-center">
-                                  <div className="w-3 h-3 rounded-full mr-3 bg-gradient-to-r from-pink-500 to-rose-500"></div>
-                                  <span className="text-gray-700">
-                                    {category}
-                                  </span>
-                                </div>
-                                <div className="flex items-center space-x-3">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {count}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    (
-                                    {Math.round(
-                                      (count / (stats.totalServices || 1)) * 100
-                                    )}
-                                    %)
-                                  </span>
-                                </div>
-                              </div>
-                            )
-                          )}
-                        </div>
+                  {stats.serviceCategories && Object.keys(stats.serviceCategories).length > 0 && (
+                    <div className="bg-white rounded-2xl shadow-lg border border-pink-200 p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                          <Scissors className="h-5 w-5 mr-2 text-pink-600" />
+                          Service Categories
+                        </h3>
+                        <span className="text-xs font-medium text-pink-700 bg-pink-100 px-3 py-1 rounded-full">
+                          {stats.totalServices || 0} Services
+                        </span>
                       </div>
-                    )}
+                      <div className="space-y-3">
+                        {Object.entries(stats.serviceCategories).map(([category, count]) => (
+                          <div key={category} className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <div className="w-3 h-3 rounded-full mr-3 bg-gradient-to-r from-pink-500 to-rose-500"></div>
+                              <span className="text-gray-700">{category}</span>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <span className="text-sm font-medium text-gray-900">{count}</span>
+                              <span className="text-xs text-gray-500">
+                                ({Math.round((count / (stats.totalServices || 1)) * 100)}%)
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Recent Activity Section */}
+                {/* Recent Activity Section (Recent Appointments removed) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                  {/* Recent Appointments */}
-                  {stats.recentAppointments &&
-                    stats.recentAppointments.length > 0 && (
-                      <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                          <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                            <Calendar className="h-5 w-5 mr-2 text-rose-600" />
-                            Recent Appointments
-                          </h3>
-                          <button
-                            onClick={() => handleTabChange("appointments")}
-                            className="text-sm font-medium text-rose-700 hover:text-rose-900 transition-colors"
-                          >
-                            View All →
-                          </button>
-                        </div>
-                        <div className="space-y-4">
-                          {stats.recentAppointments
-                            .slice(0, 5)
-                            .map((appointment) => (
-                              <div
-                                key={appointment.id}
-                                className="flex items-center justify-between p-3 hover:bg-rose-50 rounded-lg transition-colors"
-                              >
-                                <div className="flex items-center">
-                                  <div
-                                    className={`h-2 w-2 rounded-full mr-3 ${appointment.status === "Confirmed"
-                                        ? "bg-green-500"
-                                        : appointment.status === "Completed"
-                                          ? "bg-blue-500"
-                                          : appointment.status === "Pending"
-                                            ? "bg-yellow-500"
-                                            : "bg-gray-500"
-                                      }`}
-                                  ></div>
-                                  <div>
-                                    <p className="font-medium text-gray-900">
-                                      {appointment.customer}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {appointment.service}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-sm font-medium text-gray-900">
-                                    {new Date(
-                                      appointment.date
-                                    ).toLocaleDateString("en-IN", {
-                                      day: "numeric",
-                                      month: "short",
-                                    })}
-                                  </p>
-                                  <span
-                                    className={`text-xs px-2 py-1 rounded-full ${appointment.status === "Confirmed"
-                                        ? "bg-green-100 text-green-800"
-                                        : appointment.status === "Completed"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : appointment.status === "Pending"
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-gray-100 text-gray-800"
-                                      }`}
-                                  >
-                                    {appointment.status}
-                                  </span>
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                      </div>
-                    )}
-
                   {/* Quick Stats Summary */}
                   <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-2xl border border-rose-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
@@ -974,9 +680,7 @@ const AdminDashboard = () => {
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Total Users</span>
-                        <span className="font-semibold text-gray-900">
-                          {stats.totalUsers || 0}
-                        </span>
+                        <span className="font-semibold text-gray-900">{stats.totalUsers || 0}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Total Revenue</span>
@@ -986,43 +690,23 @@ const AdminDashboard = () => {
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Growth Rate</span>
-                        <span
-                          className={`font-semibold ${stats.growthRate > 0
-                              ? "text-green-600"
-                              : "text-red-600"
-                            }`}
-                        >
-                          {stats.growthRate > 0 ? "↑" : "↓"}{" "}
-                          {Math.abs(stats.growthRate || 0)}%
+                        <span className={`font-semibold ${stats.growthRate > 0 ? "text-green-600" : "text-red-600"}`}>
+                          {stats.growthRate > 0 ? "↑" : "↓"} {Math.abs(stats.growthRate || 0)}%
                         </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Conversion Rate</span>
-                        <span className="font-semibold text-emerald-700">
-                          {stats.conversionRate || 0}%
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-700">
-                          Today's Appointments
-                        </span>
-                        <span className="font-semibold text-blue-700">
-                          {stats.todayAppointments || 0}
-                        </span>
+                        <span className="font-semibold text-emerald-700">{stats.conversionRate || 0}%</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-gray-700">Occupancy Rate</span>
-                        <span className="font-semibold text-indigo-700">
-                          {stats.occupancyRate || 0}%
-                        </span>
+                        <span className="font-semibold text-indigo-700">{stats.occupancyRate || 0}%</span>
                       </div>
                     </div>
 
                     <div className="mt-6 pt-6 border-t border-rose-200">
                       <div className="text-center">
-                        <p className="text-sm text-gray-600 mb-2">
-                          Last Updated
-                        </p>
+                        <p className="text-sm text-gray-600 mb-2">Last Updated</p>
                         <p className="text-xs text-gray-500">
                           {new Date().toLocaleTimeString("en-IN", {
                             hour: "2-digit",
@@ -1032,6 +716,22 @@ const AdminDashboard = () => {
                         </p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* ✅ Empty placeholder to keep layout same (no extra features added) */}
+                  <div className="bg-white rounded-2xl shadow-lg border border-rose-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                        <Activity className="h-5 w-5 mr-2 text-rose-600" />
+                        Activity
+                      </h3>
+                      <span className="text-xs font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        Overview
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm">
+                      Dashboard insights will appear here as data grows.
+                    </p>
                   </div>
                 </div>
               </>
@@ -1044,7 +744,7 @@ const AdminDashboard = () => {
 
             const Component = {
               employee: AdminEmployeeManagement,
-              appointments: AdminAppointmentManagement,
+              // ✅ removed appointments mapping
               services: ServiceManagement,
               branches: BranchManagement,
               rooms: RoomManagement,
@@ -1055,9 +755,7 @@ const AdminDashboard = () => {
             return Component ? (
               <div
                 key={tab.id}
-                className={`transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${getAnimationClass(
-                  tab.id
-                )}`}
+                className={`transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${getAnimationClass(tab.id)}`}
                 aria-hidden={activeTab !== tab.id}
               >
                 <div className="bg-white rounded-3xl shadow-xl border border-rose-200/50 overflow-hidden">
