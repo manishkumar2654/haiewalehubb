@@ -230,11 +230,11 @@ const ProductsSection = () => {
                         </span>
                       </div>
                       <div className="flex gap-3 mt-6">
-                        <Link to={`/store`} className="flex-1">
+                        {/* <Link to={`/store`} className="flex-1">
                           <button className="w-full font-[poppins] text-sm py-3 bg-rose-900 text-white rounded-lg hover:shadow-lg transition-all duration-300 shadow-md">
                             Order
                           </button>
-                        </Link>
+                        </Link> */}
                         <Link
                           to={`/products/${product._id}`}
                           className="flex-1"
