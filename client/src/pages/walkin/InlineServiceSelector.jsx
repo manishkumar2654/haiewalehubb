@@ -1,5 +1,5 @@
 // InlineServiceSelector.jsx - Service selection modal for walk-in table
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Card, Tag, Button, Input, Select, Table, message } from "antd";
 import { Search, Plus, X } from "lucide-react";
 import ServiceModal from "./ServiceModal";
@@ -8,13 +8,17 @@ import api from "../../services/api";
 const { Option } = Select;
 
 const InlineServiceSelector = ({
+  // ✅ support both (antd v6 prefers open, old code uses visible)
+  open,
   visible,
   onClose,
   walkin,
-  services,
-  categories,
+  services = [],
+  categories = [],
   onServicesSelected,
 }) => {
+  const isOpen = open ?? visible ?? false;
+
   const [selectedServices, setSelectedServices] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredCategory, setFilteredCategory] = useState("");
@@ -22,12 +26,11 @@ const InlineServiceSelector = ({
   const [selectedService, setSelectedService] = useState(null);
   const [allEmployees, setAllEmployees] = useState([]);
 
-  // Fetch all employees (no role filtering)
+  // Fetch all employees
   useEffect(() => {
-    if (visible) {
-      fetchAllEmployees();
-    }
-  }, [visible]);
+    if (isOpen) fetchAllEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const fetchAllEmployees = async () => {
     try {
@@ -41,19 +44,25 @@ const InlineServiceSelector = ({
 
   // Initialize with existing services
   useEffect(() => {
-    if (visible && walkin) {
+    if (isOpen && walkin) {
       const existingServices = (walkin.services || []).map((s) => ({
-        serviceId: s.service?._id || s.service,
-        pricingId: s.pricing?._id || s.pricing,
-        staffId: s.staff?._id || s.staff,
+        serviceId: String(s.service?._id || s.service),
+        pricingId: String(s.pricing?._id || s.pricing),
+        staffId: s.staff?._id ? String(s.staff._id) : s.staff ? String(s.staff) : null,
         name: s.service?.name || "Service",
-        price: s.price || 0,
-        duration: s.duration || 0,
+        price: Number(s.price) || 0,
+        duration: Number(s.duration) || 0,
         categoryName: s.category?.name || "Uncategorized",
       }));
       setSelectedServices(existingServices);
+    } else if (!isOpen) {
+      // ✅ keep it clean when modal closes
+      setSearchTerm("");
+      setFilteredCategory("");
+      setIsServiceModalVisible(false);
+      setSelectedService(null);
     }
-  }, [visible, walkin]);
+  }, [isOpen, walkin]);
 
   const handleOpenServiceModal = (service) => {
     setSelectedService(service);
@@ -61,48 +70,43 @@ const InlineServiceSelector = ({
   };
 
   const handleServiceSelect = (serviceId, pricingId, selectedStaffId) => {
-    console.log("🎯 Service selected:", { serviceId, pricingId, selectedStaffId });
-    
-    const service = services.find((s) => s._id === serviceId);
+    const serviceIdStr = String(serviceId);
+    const pricingIdStr = String(pricingId);
+
+    const service = services.find((s) => String(s._id) === serviceIdStr);
     if (!service) {
       message.error("Service not found!");
       return;
     }
 
-    // Ensure pricingId is a string for comparison
-    const pricingIdStr = String(pricingId);
-    const pricing = service.pricing?.find((p) => {
-      const pIdStr = String(p._id);
-      return pIdStr === pricingIdStr;
-    });
-    
+    const pricing = service.pricing?.find((p) => String(p._id) === pricingIdStr);
     if (!pricing) {
-      console.error("❌ Pricing not found. Available pricing:", service.pricing?.map(p => p._id));
+      console.error(
+        "❌ Pricing not found. Available pricing:",
+        service.pricing?.map((p) => p._id)
+      );
       message.error("Pricing option not found!");
       return;
     }
 
     const category = categories.find(
-      (c) => c._id === service.category?._id || service.category
+      (c) => String(c._id) === String(service.category?._id || service.category)
     );
 
     const newService = {
-      serviceId: String(serviceId), // Ensure string
-      pricingId: pricingIdStr, // Use the string version
+      serviceId: serviceIdStr,
+      pricingId: pricingIdStr,
       staffId: selectedStaffId ? String(selectedStaffId) : null,
       name: service.name,
       price: Number(pricing.price) || 0,
       duration: Number(pricing.durationMinutes || pricing.duration || 0),
       categoryName: category?.name || "Uncategorized",
     };
-    
-    console.log("✅ New service object:", newService);
 
-    // Check if already selected
+    // ✅ fix: compare string-to-string (aapke code me mixed compare tha)
     const exists = selectedServices.find(
-      (s) => s.serviceId === serviceId && s.pricingId === pricingId
+      (s) => String(s.serviceId) === serviceIdStr && String(s.pricingId) === pricingIdStr
     );
-
     if (exists) {
       message.warning("Service already selected!");
       return;
@@ -124,34 +128,29 @@ const InlineServiceSelector = ({
       message.warning("Please select at least one service");
       return;
     }
-    onServicesSelected(selectedServices);
-    onClose();
+    onServicesSelected?.(selectedServices);
+    // ✅ parent will handle open-after-save logic
+    onClose?.();
   };
 
-  const filteredServices = services.filter((service) => {
-    const matchesSearch = searchTerm
-      ? service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        service.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      : true;
+  const filteredServices = useMemo(() => {
+    return services.filter((service) => {
+      const matchesSearch = searchTerm
+        ? service.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          service.description?.toLowerCase().includes(searchTerm.toLowerCase())
+        : true;
 
-    const matchesCategory = filteredCategory
-      ? service.category?._id === filteredCategory
-      : true;
+      const matchesCategory = filteredCategory
+        ? String(service.category?._id || service.category) === String(filteredCategory)
+        : true;
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    });
+  }, [services, searchTerm, filteredCategory]);
 
   const columns = [
-    {
-      title: "Service",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "Category",
-      dataIndex: "categoryName",
-      key: "categoryName",
-    },
+    { title: "Service", dataIndex: "name", key: "name" },
+    { title: "Category", dataIndex: "categoryName", key: "categoryName" },
     {
       title: "Duration",
       dataIndex: "duration",
@@ -185,9 +184,11 @@ const InlineServiceSelector = ({
     <>
       <Modal
         title={`Select Services - ${walkin?.walkinNumber || ""}`}
-        open={visible}
+        open={isOpen}
         onCancel={onClose}
         width={900}
+        maskClosable={false}
+        keyboard={false}
         footer={[
           <Button key="cancel" onClick={onClose}>
             Cancel
@@ -199,20 +200,20 @@ const InlineServiceSelector = ({
       >
         <div className="space-y-4">
           {/* Search and Filter */}
-          <div className="flex gap-4">
+          <div className="flex gap-4 flex-wrap">
             <Input
               placeholder="Search services..."
               prefix={<Search className="w-4 h-4" />}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{ width: 300 }}
+              style={{ width: 300, maxWidth: "100%" }}
               allowClear
             />
             <Select
               placeholder="Filter by category"
-              style={{ width: 200 }}
-              value={filteredCategory}
-              onChange={setFilteredCategory}
+              style={{ width: 200, maxWidth: "100%" }}
+              value={filteredCategory || undefined}
+              onChange={(v) => setFilteredCategory(v || "")}
               allowClear
             >
               {categories.map((cat) => (
@@ -231,7 +232,7 @@ const InlineServiceSelector = ({
                 hoverable
                 className="border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => handleOpenServiceModal(service)}
-                bodyStyle={{ padding: "16px" }}
+                styles={{ body: { padding: 16 } }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -241,6 +242,7 @@ const InlineServiceSelector = ({
                     <p className="text-sm text-gray-600 mb-2">
                       {service.category?.name || "Uncategorized"}
                     </p>
+
                     {service.pricing && service.pricing.length > 0 ? (
                       <div className="mt-2 space-y-1">
                         {service.pricing.slice(0, 2).map((price) => (
@@ -274,7 +276,7 @@ const InlineServiceSelector = ({
                 columns={columns}
                 pagination={false}
                 size="small"
-                rowKey={(record, index) => `${record.serviceId}-${index}`}
+                rowKey={(record, index) => `${record.serviceId}-${record.pricingId}-${index}`}
               />
               <div className="mt-4 pt-4 border-t">
                 <div className="flex justify-between font-bold text-lg">
@@ -292,8 +294,9 @@ const InlineServiceSelector = ({
         </div>
       </Modal>
 
-      {/* Service Modal */}
+      {/* ✅ Service Modal (pass both open+visible to avoid silent fail) */}
       <ServiceModal
+        open={isServiceModalVisible}
         visible={isServiceModalVisible}
         service={selectedService}
         onCancel={() => {
@@ -302,7 +305,7 @@ const InlineServiceSelector = ({
         }}
         onSelect={handleServiceSelect}
         categories={categories}
-        availableStaff={allEmployees} // All employees (no role filtering)
+        availableStaff={allEmployees}
       />
     </>
   );
