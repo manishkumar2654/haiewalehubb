@@ -69,9 +69,6 @@ const WalkinList = ({
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedQrData, setSelectedQrData] = useState(null);
 
-  // ✅ CONTROLLED dropdown open state (per row)
-  const [quickMenuOpenId, setQuickMenuOpenId] = useState(null);
-
   // Basic filters
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -257,9 +254,7 @@ const WalkinList = ({
       width: isMobile ? "92vw" : 820,
       centered: isMobile ? true : undefined,
       style: isMobile ? { padding: 0 } : undefined,
-      wrapClassName: isMobile
-        ? "premium-modal mobile-center-modal"
-        : "premium-modal",
+      wrapClassName: isMobile ? "premium-modal mobile-center-modal" : "premium-modal",
 
       // ✅ DO NOT auto close by click outside / ESC
       maskClosable: false,
@@ -473,10 +468,7 @@ const WalkinList = ({
           <Button onClick={() => handleShowQR(walkin)} icon={<QrcodeOutlined />}>
             View QR
           </Button>
-          <Button
-            onClick={() => handleDownloadPDF(walkin._id)}
-            icon={<Download />}
-          >
+          <Button onClick={() => handleDownloadPDF(walkin._id)} icon={<Download />}>
             PDF
           </Button>
         </div>
@@ -492,8 +484,7 @@ const WalkinList = ({
       Email: walkin.customerEmail,
       Branch: walkin.branch,
       Seat: getSeatLabel(walkin),
-      Services:
-        walkin.services?.map((s) => s.service?.name).join(", ") || "None",
+      Services: walkin.services?.map((s) => s.service?.name).join(", ") || "None",
       Products:
         walkin.products
           ?.map((p) => `${p.product?.name} x${p.quantity}`)
@@ -535,9 +526,6 @@ const WalkinList = ({
 
       message.success("Services saved!");
       await fetchWalkins();
-
-      // ✅ SAVE ke baad MANAGE dropdown auto-open
-      setQuickMenuOpenId(walkinId);
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to save services");
     }
@@ -571,9 +559,6 @@ const WalkinList = ({
 
       message.success("Employees assigned successfully!");
       await fetchWalkins();
-
-      // ✅ SAVE ke baad MANAGE dropdown auto-open
-      setQuickMenuOpenId(walkinId);
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to assign employees");
     }
@@ -593,9 +578,6 @@ const WalkinList = ({
 
       message.success("Products saved!");
       await fetchWalkins();
-
-      // ✅ SAVE ke baad MANAGE dropdown auto-open
-      setQuickMenuOpenId(walkinId);
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to save products");
     }
@@ -730,6 +712,7 @@ const WalkinList = ({
           ? "premium-modal mobile-center-modal"
           : "premium-modal",
 
+        // ✅ center + premium
         width: isMobile ? "92vw" : 520,
         centered: isMobile ? true : undefined,
         style: isMobile ? { padding: 0 } : undefined,
@@ -962,31 +945,18 @@ const WalkinList = ({
 
       {
         key: "m1",
-        label: (
-          <b style={{ fontSize: 12, color: "#6b7280" }}>
-            MANAGEeeeeeeeeeeeeeeeeeee
-          </b>
-        ),
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGEeeeeeeeeeeeeeeeeeee</b>,
         disabled: true,
       },
       {
         key: "services",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Scissors className="w-4 h-4" />
               <span>Services</span>
             </span>
-            <Tag
-              color={servicesArr.length ? "blue" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={servicesArr.length ? "blue" : "default"} style={{ margin: 0 }}>
               {servicesArr.length}
             </Tag>
           </div>
@@ -996,21 +966,12 @@ const WalkinList = ({
       {
         key: "employees",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Users className="w-4 h-4" />
               <span>Employees</span>
             </span>
-            <Tag
-              color={employeesCount ? "green" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={employeesCount ? "green" : "default"} style={{ margin: 0 }}>
               {employeesCount}
             </Tag>
           </div>
@@ -1021,21 +982,12 @@ const WalkinList = ({
       {
         key: "products",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <ShoppingBag className="w-4 h-4" />
               <span>Products</span>
             </span>
-            <Tag
-              color={productsArr.length ? "gold" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={productsArr.length ? "gold" : "default"} style={{ margin: 0 }}>
               {productsArr.length}
             </Tag>
           </div>
@@ -1053,13 +1005,7 @@ const WalkinList = ({
       {
         key: "status",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span>Status</span>
             <Tag color={statusMeta.color} style={{ margin: 0 }}>
               {statusMeta.text}
@@ -1071,13 +1017,7 @@ const WalkinList = ({
       {
         key: "payment",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <DollarSign className="w-4 h-4" />
               Payment
@@ -1095,13 +1035,7 @@ const WalkinList = ({
       {
         key: "calc",
         label: (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 10,
-            }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Calculator className="w-4 h-4" />
               Calculate & Save
@@ -1118,9 +1052,7 @@ const WalkinList = ({
 
     return (
       <Space size="small" wrap className={isMobile ? "mobile-actions" : ""}>
-        <Tooltip
-          title={hasSelections ? "Calculate Price" : "Select services/products first"}
-        >
+        <Tooltip title={hasSelections ? "Calculate Price" : "Select services/products first"}>
           <Button
             size="small"
             type="primary"
@@ -1135,45 +1067,30 @@ const WalkinList = ({
           </Button>
         </Tooltip>
 
-        {/* ✅ CONTROLLED Dropdown: menu click se auto close nahi hoga */}
         <Dropdown
           trigger={["click"]}
           placement="bottomRight"
           overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
           menu={{ items: menuItems }}
-          open={quickMenuOpenId === record._id}
-          onOpenChange={(open, info) => {
-            // ✅ menu item click se close request ignore (keep open)
-            if (info?.source === "menu" && open === false) {
-              setQuickMenuOpenId(record._id);
-              return;
-            }
-            setQuickMenuOpenId(open ? record._id : null);
-          }}
         >
           <Button
             size="small"
             icon={<MoreOutlined />}
-            onClick={(e) => {
-              e?.stopPropagation?.();
-              // ✅ manual toggle
-              setQuickMenuOpenId((prev) => (prev === record._id ? null : record._id));
-            }}
+            onClick={(e) => e?.stopPropagation?.()}
           />
         </Dropdown>
       </Space>
     );
   };
 
-  // ===== Desktop Table Columns =====
+  // ===== Desktop Table Columns (unchanged) =====
   const columns = [
     {
       title: "Walk-in #",
       dataIndex: "walkinNumber",
       key: "walkinNumber",
       width: 120,
-      sorter: (a, b) =>
-        (a.walkinNumber || "").localeCompare(b.walkinNumber || ""),
+      sorter: (a, b) => (a.walkinNumber || "").localeCompare(b.walkinNumber || ""),
     },
     {
       title: "Customer",
@@ -1254,25 +1171,13 @@ const WalkinList = ({
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => showWalkinDetails(record)}
-            />
+            <Button type="text" icon={<EyeOutlined />} onClick={() => showWalkinDetails(record)} />
           </Tooltip>
           <Tooltip title="PDF">
-            <Button
-              type="text"
-              icon={<FilePdfOutlined />}
-              onClick={() => handleDownloadPDF(record._id)}
-            />
+            <Button type="text" icon={<FilePdfOutlined />} onClick={() => handleDownloadPDF(record._id)} />
           </Tooltip>
           <Tooltip title="QR">
-            <Button
-              type="text"
-              icon={<QrcodeOutlined />}
-              onClick={() => handleShowQR(record)}
-            />
+            <Button type="text" icon={<QrcodeOutlined />} onClick={() => handleShowQR(record)} />
           </Tooltip>
         </Space>
       ),
@@ -1280,16 +1185,9 @@ const WalkinList = ({
   ];
 
   // ===== Stats =====
-  const totalAmountSum = filteredWalkins.reduce(
-    (sum, w) => sum + (w.totalAmount || 0),
-    0
-  );
-  const totalInProgress = filteredWalkins.filter(
-    (w) => w.status === "in_progress"
-  ).length;
-  const totalCompleted = filteredWalkins.filter(
-    (w) => w.status === "completed"
-  ).length;
+  const totalAmountSum = filteredWalkins.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
+  const totalInProgress = filteredWalkins.filter((w) => w.status === "in_progress").length;
+  const totalCompleted = filteredWalkins.filter((w) => w.status === "completed").length;
 
   // ===== Mobile Card Row =====
   const MobileWalkinCard = ({ w }) => {
@@ -1369,18 +1267,10 @@ const WalkinList = ({
 
           <Space onClick={(e) => e.stopPropagation()}>
             <Tooltip title="PDF">
-              <Button
-                size="small"
-                icon={<FilePdfOutlined />}
-                onClick={() => handleDownloadPDF(w._id)}
-              />
+              <Button size="small" icon={<FilePdfOutlined />} onClick={() => handleDownloadPDF(w._id)} />
             </Tooltip>
             <Tooltip title="QR">
-              <Button
-                size="small"
-                icon={<QrcodeOutlined />}
-                onClick={() => handleShowQR(w)}
-              />
+              <Button size="small" icon={<QrcodeOutlined />} onClick={() => handleShowQR(w)} />
             </Tooltip>
           </Space>
         </div>
