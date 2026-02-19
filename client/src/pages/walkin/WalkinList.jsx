@@ -250,13 +250,13 @@ const WalkinList = ({
         </div>
       ),
 
-      // ✅ center + premium wrap
       width: isMobile ? "92vw" : 820,
       centered: isMobile ? true : undefined,
       style: isMobile ? { padding: 0 } : undefined,
-      wrapClassName: isMobile ? "premium-modal mobile-center-modal" : "premium-modal",
+      wrapClassName: isMobile
+        ? "premium-modal mobile-center-modal"
+        : "premium-modal",
 
-      // ✅ DO NOT auto close by click outside / ESC
       maskClosable: false,
       keyboard: false,
 
@@ -465,10 +465,16 @@ const WalkinList = ({
       ),
       footer: (
         <div className="flex justify-between">
-          <Button onClick={() => handleShowQR(walkin)} icon={<QrcodeOutlined />}>
+          <Button
+            onClick={() => handleShowQR(walkin)}
+            icon={<QrcodeOutlined />}
+          >
             View QR
           </Button>
-          <Button onClick={() => handleDownloadPDF(walkin._id)} icon={<Download />}>
+          <Button
+            onClick={() => handleDownloadPDF(walkin._id)}
+            icon={<Download />}
+          >
             PDF
           </Button>
         </div>
@@ -712,12 +718,10 @@ const WalkinList = ({
           ? "premium-modal mobile-center-modal"
           : "premium-modal",
 
-        // ✅ center + premium
         width: isMobile ? "92vw" : 520,
         centered: isMobile ? true : undefined,
         style: isMobile ? { padding: 0 } : undefined,
 
-        // ✅ DO NOT auto close by click outside / ESC
         maskClosable: false,
         keyboard: false,
 
@@ -798,7 +802,17 @@ const WalkinList = ({
 
       let matchesAdvanced = true;
 
-      if (hasActiveAdvancedFilters()) {
+      if (
+        (dateRange && dateRange[0] && dateRange[1]) ||
+        advancedStatusFilter !== "all" ||
+        advancedBranchFilter !== "all" ||
+        paymentStatusFilter !== "all" ||
+        minAmount !== null ||
+        maxAmount !== null ||
+        customerNameFilter !== "" ||
+        phoneFilter !== "" ||
+        walkinNumberFilter !== ""
+      ) {
         if (dateRange && dateRange[0] && dateRange[1]) {
           const walkinDate = new Date(walkin.createdAt || walkin.walkinDate);
           const startDate = dateRange[0].toDate
@@ -914,27 +928,29 @@ const WalkinList = ({
           <div style={{ padding: "6px 4px" }}>
             <div
               style={{
-                fontWeight: 600,
+                fontWeight: 700,
                 display: "flex",
                 justifyContent: "space-between",
                 gap: 8,
               }}
             >
-              <span>{record.walkinNumber}</span>
+              <span style={{ maxWidth: "65%", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {record.walkinNumber}
+              </span>
               <Tag color={statusMeta.color} style={{ margin: 0 }}>
                 {statusMeta.text}
               </Tag>
             </div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: "rgba(226,232,240,0.8)", marginTop: 6 }}>
               {record.customerName} • {record.customerPhone}
             </div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "rgba(226,232,240,0.8)", marginTop: 3 }}>
               Total: ₹{record.totalAmount?.toFixed(2) || "0.00"} •{" "}
               <Tag color={paymentMeta.color} style={{ margin: 0 }}>
                 {paymentMeta.text}
               </Tag>
             </div>
-            <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "rgba(226,232,240,0.8)", marginTop: 3 }}>
               Seat: {getSeatLabel(record)}
             </div>
           </div>
@@ -945,7 +961,7 @@ const WalkinList = ({
 
       {
         key: "m1",
-        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGEeeeeeeeeeeeeeeeeeee</b>,
+        label: <b style={{ fontSize: 12, letterSpacing: 1, opacity: 0.85 }}>MANAGE</b>,
         disabled: true,
       },
       {
@@ -999,7 +1015,7 @@ const WalkinList = ({
 
       {
         key: "m2",
-        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        label: <b style={{ fontSize: 12, letterSpacing: 1, opacity: 0.85 }}>BILLING</b>,
         disabled: true,
       },
       {
@@ -1067,10 +1083,17 @@ const WalkinList = ({
           </Button>
         </Tooltip>
 
+        {/* ✅ FIX: mobile me placement bottomLeft + overlay maxHeight scroll + industrial class */}
         <Dropdown
           trigger={["click"]}
-          placement="bottomRight"
-          overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
+          placement={isMobile ? "bottomLeft" : "bottomRight"}
+          overlayClassName="industrial-dropdown"
+          overlayStyle={{
+            width: isMobile ? 320 : 320,
+            maxWidth: "92vw",
+            maxHeight: isMobile ? "70vh" : "60vh",
+            overflowY: "auto",
+          }}
           menu={{ items: menuItems }}
         >
           <Button
@@ -1197,7 +1220,7 @@ const WalkinList = ({
     return (
       <Card
         size="small"
-        className="mobile-walkin-card"
+        className="mobile-walkin-card premium-card"
         style={{ borderRadius: 14 }}
         bodyStyle={{ padding: 12 }}
         onClick={() => showWalkinDetails(w)}
@@ -1311,19 +1334,56 @@ const WalkinList = ({
           -webkit-backdrop-filter: blur(4px);
         }
 
+        /* ✅ Page premium polish (NO logic change) */
+        .premium-card,
+        .ant-card.premium-card {
+          border: 1px solid rgba(148, 163, 184, 0.35) !important;
+          box-shadow: 0 10px 28px rgba(2, 6, 23, 0.06) !important;
+        }
+        .ant-card {
+          border-radius: 14px !important;
+        }
+        .ant-table {
+          border-radius: 14px !important;
+          overflow: hidden;
+        }
+
+        /* ✅ INDUSTRIAL Dropdown look */
+        .industrial-dropdown .ant-dropdown-menu {
+          border-radius: 14px !important;
+          overflow: hidden;
+          border: 1px solid rgba(148,163,184,0.25) !important;
+          background: linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(15,23,42,0.98) 100%) !important;
+          box-shadow: 0 18px 50px rgba(0,0,0,0.35) !important;
+          padding: 8px !important;
+        }
+        .industrial-dropdown .ant-dropdown-menu-item,
+        .industrial-dropdown .ant-dropdown-menu-submenu-title {
+          border-radius: 12px !important;
+          margin: 6px !important;
+          padding: 12px 12px !important;
+          color: rgba(226,232,240,0.92) !important;
+          background: rgba(148,163,184,0.06) !important;
+          border: 1px solid rgba(148,163,184,0.14) !important;
+        }
+        .industrial-dropdown .ant-dropdown-menu-item:hover {
+          background: rgba(59,130,246,0.16) !important;
+          border-color: rgba(59,130,246,0.35) !important;
+        }
+        .industrial-dropdown .ant-dropdown-menu-item-disabled {
+          opacity: 0.75 !important;
+          cursor: default !important;
+        }
+        .industrial-dropdown .ant-dropdown-menu-item-divider {
+          background: rgba(148,163,184,0.18) !important;
+          margin: 8px 12px !important;
+        }
+
         /* ✅ only mobile fixes (desktop unchanged) */
         @media (max-width: 767px) {
           .mobile-actions { width: 100%; justify-content: space-between; }
           .mobile-walkin-card { width: 100%; }
           .ant-list-item { padding: 6px 0 !important; }
-
-          /* Dropdown more touch friendly */
-          .ant-dropdown-menu-item {
-            padding: 12px 12px !important;
-            border-radius: 12px;
-            margin: 6px 6px;
-          }
-          .ant-dropdown-menu { border-radius: 14px !important; }
 
           /* ✅ Center modals in mobile */
           .mobile-center-modal .ant-modal {
@@ -1340,13 +1400,10 @@ const WalkinList = ({
             overflow: auto !important;
           }
         }
-
-        /* dropdown polish */
-        .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
 
       {/* Filters */}
-      <Card size="small" className="mb-4" style={{ borderRadius: 14 }}>
+      <Card size="small" className="mb-4 premium-card" style={{ borderRadius: 14 }}>
         <Row gutter={[10, 10]} align="middle">
           <Col xs={24} md={8}>
             <Input
@@ -1424,22 +1481,22 @@ const WalkinList = ({
       {/* Stats */}
       <Row gutter={[10, 10]} className="mb-4">
         <Col xs={12} md={6}>
-          <Card size="small" style={{ borderRadius: 14 }}>
+          <Card size="small" className="premium-card" style={{ borderRadius: 14 }}>
             <Statistic title="Total" value={filteredWalkins.length} prefix={<TeamOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
-          <Card size="small" style={{ borderRadius: 14 }}>
+          <Card size="small" className="premium-card" style={{ borderRadius: 14 }}>
             <Statistic title="In Progress" value={totalInProgress} prefix={<ClockCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
-          <Card size="small" style={{ borderRadius: 14 }}>
+          <Card size="small" className="premium-card" style={{ borderRadius: 14 }}>
             <Statistic title="Completed" value={totalCompleted} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
-          <Card size="small" style={{ borderRadius: 14 }}>
+          <Card size="small" className="premium-card" style={{ borderRadius: 14 }}>
             <Statistic
               title="Amount"
               value={totalAmountSum}
