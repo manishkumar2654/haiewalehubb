@@ -251,10 +251,13 @@ const WalkinList = ({
           />
         </div>
       ),
-      // ✅ mobile full width + better top + no overflow issues
-      width: isMobile ? "100%" : 820,
-      style: isMobile ? { top: 10, padding: 0 } : undefined,
-      wrapClassName: isMobile ? "mobile-full-modal" : undefined,
+
+      // ✅ mobile center + width fit (ONLY mobile change)
+      width: isMobile ? "92vw" : 820,
+      centered: isMobile ? true : undefined,
+      style: isMobile ? { padding: 0 } : undefined,
+      wrapClassName: isMobile ? "mobile-center-modal" : undefined,
+
       icon: null,
       closable: true,
       okButtonProps: { style: { display: "none" } },
@@ -706,9 +709,11 @@ const WalkinList = ({
 
       Modal.confirm({
         title: "Calculated Price",
-        wrapClassName: isMobile ? "mobile-full-modal" : undefined,
-        width: isMobile ? "100%" : 520,
-        style: isMobile ? { top: 10 } : undefined,
+        // ✅ mobile center + width fit (ONLY mobile change)
+        wrapClassName: isMobile ? "mobile-center-modal" : undefined,
+        width: isMobile ? "92vw" : 520,
+        centered: isMobile ? true : undefined,
+        style: isMobile ? { padding: 0 } : undefined,
         content: (
           <div className="space-y-2 py-4">
             <div className="flex justify-between">
@@ -819,8 +824,10 @@ const WalkinList = ({
           matchesAdvanced = false;
 
         const totalAmount = walkin.totalAmount || 0;
-        if (minAmount !== null && totalAmount < minAmount) matchesAdvanced = false;
-        if (maxAmount !== null && totalAmount > maxAmount) matchesAdvanced = false;
+        if (minAmount !== null && totalAmount < minAmount)
+          matchesAdvanced = false;
+        if (maxAmount !== null && totalAmount > maxAmount)
+          matchesAdvanced = false;
 
         if (
           customerNameFilter &&
@@ -929,7 +936,11 @@ const WalkinList = ({
       },
       { type: "divider" },
 
-      { key: "m1", label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>, disabled: true },
+      {
+        key: "m1",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        disabled: true,
+      },
       {
         key: "services",
         label: (
@@ -979,7 +990,11 @@ const WalkinList = ({
 
       { type: "divider" },
 
-      { key: "m2", label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>, disabled: true },
+      {
+        key: "m2",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        disabled: true,
+      },
       {
         key: "status",
         label: (
@@ -1180,8 +1195,11 @@ const WalkinList = ({
     0
   );
 
-  const totalInProgress = filteredWalkins.filter((w) => w.status === "in_progress").length;
-  const totalCompleted = filteredWalkins.filter((w) => w.status === "completed").length;
+  const totalInProgress = filteredWalkins.filter(
+    (w) => w.status === "in_progress"
+  ).length;
+  const totalCompleted = filteredWalkins.filter((w) => w.status === "completed")
+    .length;
 
   // ===== Mobile Card Row =====
   const MobileWalkinCard = ({ w }) => {
@@ -1242,7 +1260,13 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
             <div style={{ fontWeight: 900, fontSize: 16 }}>
@@ -1254,7 +1278,14 @@ const WalkinList = ({
           </Tag>
         </div>
 
-        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
           <div onClick={(e) => e.stopPropagation()}>
             <QuickActions record={w} />
           </div>
@@ -1297,20 +1328,22 @@ const WalkinList = ({
           }
           .ant-dropdown-menu { border-radius: 14px !important; }
 
-          /* Full-screen modal polish */
-          .mobile-full-modal .ant-modal {
-            max-width: 100vw !important;
-            width: 100vw !important;
-            margin: 0 !important;
-            top: 0 !important;
+          /* ✅ Center modals in mobile (fix popup center issue) */
+          .mobile-center-modal .ant-modal {
+            width: 92vw !important;
+            max-width: 92vw !important;
+            margin: 0 auto !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;              /* let antd centered work */
             padding-bottom: 0 !important;
           }
-          .mobile-full-modal .ant-modal-content {
-            border-radius: 0 !important;
-            min-height: 100vh !important;
+          .mobile-center-modal .ant-modal-content {
+            border-radius: 14px !important;    /* normal modal feel */
+            overflow: hidden;
           }
-          .mobile-full-modal .ant-modal-body {
-            max-height: calc(100vh - 110px) !important;
+          .mobile-center-modal .ant-modal-body {
+            max-height: calc(100vh - 180px) !important;
             overflow: auto !important;
           }
         }
@@ -1333,7 +1366,11 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
+            <Select
+              value={statusFilter}
+              onChange={setStatusFilter}
+              style={{ width: "100%" }}
+            >
               <Option value="all">All Status</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1343,7 +1380,11 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select value={branchFilter} onChange={setBranchFilter} style={{ width: "100%" }}>
+            <Select
+              value={branchFilter}
+              onChange={setBranchFilter}
+              style={{ width: "100%" }}
+            >
               <Option value="all">All Branches</Option>
               {branches.map((b) => (
                 <Option key={b._id} value={b.name}>
@@ -1354,7 +1395,11 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select value={dateFilter} onChange={setDateFilter} style={{ width: "100%" }}>
+            <Select
+              value={dateFilter}
+              onChange={setDateFilter}
+              style={{ width: "100%" }}
+            >
               <Option value="all">All Dates</Option>
               <Option value="today">Today</Option>
               <Option value="week">This Week</Option>
@@ -1364,14 +1409,21 @@ const WalkinList = ({
           <Col
             xs={12}
             md={4}
-            style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
           >
             <Button
               icon={<FilterOutlined />}
               type={hasActiveAdvancedFilters() ? "primary" : "default"}
               onClick={() => setAdvancedOpen(true)}
             >
-              {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
+              {isMobile
+                ? "Advanced"
+                : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
             </Button>
 
             <Button icon={<ClearOutlined />} onClick={clearBasicFilters}>
@@ -1572,9 +1624,11 @@ const WalkinList = ({
           onOk={handleSaveStatus}
           okText="Update Status"
           cancelText="Cancel"
-          width={isMobile ? "100%" : 420}
-          style={isMobile ? { top: 10 } : undefined}
-          wrapClassName={isMobile ? "mobile-full-modal" : undefined}
+          // ✅ mobile center (ONLY mobile change)
+          width={isMobile ? "92vw" : 420}
+          centered={isMobile ? true : undefined}
+          style={isMobile ? { padding: 0 } : undefined}
+          wrapClassName={isMobile ? "mobile-center-modal" : undefined}
         >
           <div className="py-4">
             <div className="mb-4">
@@ -1620,9 +1674,11 @@ const WalkinList = ({
           onOk={handleSavePayment}
           okText="Update Payment"
           cancelText="Cancel"
-          width={isMobile ? "100%" : 420}
-          style={isMobile ? { top: 10 } : undefined}
-          wrapClassName={isMobile ? "mobile-full-modal" : undefined}
+          // ✅ mobile center (ONLY mobile change)
+          width={isMobile ? "92vw" : 420}
+          centered={isMobile ? true : undefined}
+          style={isMobile ? { padding: 0 } : undefined}
+          wrapClassName={isMobile ? "mobile-center-modal" : undefined}
         >
           <div className="py-4 space-y-4">
             <div>
@@ -1696,9 +1752,7 @@ const WalkinList = ({
                 size="large"
                 min={0}
                 max={calculateTotalAfterDiscount()}
-                formatter={(value) =>
-                  `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
+                formatter={(value) => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
               />
             </div>
