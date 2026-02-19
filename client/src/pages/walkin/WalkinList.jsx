@@ -949,20 +949,41 @@ const WalkinList = ({
         disabled: true,
       },
       {
-        key: "services",
-        label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Scissors className="w-4 h-4" />
-              <span>Services</span>
-            </span>
-            <Tag color={servicesArr.length ? "blue" : "default"} style={{ margin: 0 }}>
-              {servicesArr.length}
-            </Tag>
-          </div>
-        ),
-        onClick: openServices,
-      },
+  key: "services",
+  label: (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 10,
+        alignItems: "center",
+        flexWrap: "wrap",
+      }}
+    >
+      <span
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          minWidth: 0,
+          flex: "1 1 auto",
+        }}
+      >
+        <Scissors className="w-4 h-4" />
+        <span style={{ wordBreak: "break-word" }}>Services</span>
+      </span>
+
+      <Tag
+        color={servicesArr.length ? "blue" : "default"}
+        style={{ margin: 0, flex: "0 0 auto" }}
+      >
+        {servicesArr.length}
+      </Tag>
+    </div>
+  ),
+  onClick: openServices,
+}
+,
       {
         key: "employees",
         label: (
@@ -1067,12 +1088,29 @@ const WalkinList = ({
           </Button>
         </Tooltip>
 
-        <Dropdown
-          trigger={["click"]}
-          placement="bottomRight"
-          overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
-          menu={{ items: menuItems }}
-        >
+      <Dropdown
+  trigger={["click"]}
+  placement="bottomRight"
+  overlayStyle={{
+    width: isMobile ? "92vw" : 320,
+    maxWidth: "92vw",
+  }}
+  menu={{ items: menuItems }}
+  dropdownRender={(menu) => (
+    <div
+      style={{
+        width: "100%",
+        maxHeight: isMobile ? "70vh" : "60vh",
+        overflowY: "auto",
+        overflowX: "hidden",
+        borderRadius: 14,
+      }}
+    >
+      {menu}
+    </div>
+  )}
+>
+
           <Button
             size="small"
             icon={<MoreOutlined />}
@@ -1343,6 +1381,15 @@ const WalkinList = ({
 
         /* dropdown polish */
         .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
+
+        @media (max-width: 767px) {
+  .ant-dropdown-menu {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
       `}</style>
 
       {/* Filters */}
