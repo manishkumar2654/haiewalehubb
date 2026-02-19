@@ -69,7 +69,7 @@ const WalkinList = ({
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [selectedQrData, setSelectedQrData] = useState(null);
 
-  // ✅ Dropdown ko auto-close se rokne ke liye (MANAGE wala popup)
+  // ✅ CONTROLLED dropdown open state (per row)
   const [quickMenuOpenId, setQuickMenuOpenId] = useState(null);
 
   // Basic filters
@@ -470,10 +470,7 @@ const WalkinList = ({
       ),
       footer: (
         <div className="flex justify-between">
-          <Button
-            onClick={() => handleShowQR(walkin)}
-            icon={<QrcodeOutlined />}
-          >
+          <Button onClick={() => handleShowQR(walkin)} icon={<QrcodeOutlined />}>
             View QR
           </Button>
           <Button
@@ -538,6 +535,9 @@ const WalkinList = ({
 
       message.success("Services saved!");
       await fetchWalkins();
+
+      // ✅ SAVE ke baad MANAGE dropdown auto-open
+      setQuickMenuOpenId(walkinId);
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to save services");
     }
@@ -571,10 +571,11 @@ const WalkinList = ({
 
       message.success("Employees assigned successfully!");
       await fetchWalkins();
+
+      // ✅ SAVE ke baad MANAGE dropdown auto-open
+      setQuickMenuOpenId(walkinId);
     } catch (error) {
-      message.error(
-        error.response?.data?.message || "Failed to assign employees"
-      );
+      message.error(error.response?.data?.message || "Failed to assign employees");
     }
   };
 
@@ -592,6 +593,9 @@ const WalkinList = ({
 
       message.success("Products saved!");
       await fetchWalkins();
+
+      // ✅ SAVE ke baad MANAGE dropdown auto-open
+      setQuickMenuOpenId(walkinId);
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to save products");
     }
@@ -726,7 +730,6 @@ const WalkinList = ({
           ? "premium-modal mobile-center-modal"
           : "premium-modal",
 
-        // ✅ center + premium
         width: isMobile ? "92vw" : 520,
         centered: isMobile ? true : undefined,
         style: isMobile ? { padding: 0 } : undefined,
@@ -1103,10 +1106,7 @@ const WalkinList = ({
               <Calculator className="w-4 h-4" />
               Calculate & Save
             </span>
-            <Tag
-              color={hasSelections ? "cyan" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={hasSelections ? "cyan" : "default"} style={{ margin: 0 }}>
               {hasSelections ? "READY" : "PENDING"}
             </Tag>
           </div>
@@ -1135,16 +1135,17 @@ const WalkinList = ({
           </Button>
         </Tooltip>
 
+        {/* ✅ CONTROLLED Dropdown: menu click se auto close nahi hoga */}
         <Dropdown
           trigger={["click"]}
           placement="bottomRight"
           overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
           menu={{ items: menuItems }}
-          // ✅ yahi main fix: menu click se close nahi hoga, sirf manually (outside / button) se close hoga
           open={quickMenuOpenId === record._id}
           onOpenChange={(open, info) => {
-            if (info?.source === "menu") {
-              setQuickMenuOpenId(record._id); // menu click pe force open
+            // ✅ menu item click se close request ignore (keep open)
+            if (info?.source === "menu" && open === false) {
+              setQuickMenuOpenId(record._id);
               return;
             }
             setQuickMenuOpenId(open ? record._id : null);
@@ -1153,14 +1154,18 @@ const WalkinList = ({
           <Button
             size="small"
             icon={<MoreOutlined />}
-            onClick={(e) => e?.stopPropagation?.()}
+            onClick={(e) => {
+              e?.stopPropagation?.();
+              // ✅ manual toggle
+              setQuickMenuOpenId((prev) => (prev === record._id ? null : record._id));
+            }}
           />
         </Dropdown>
       </Space>
     );
   };
 
-  // ===== Desktop Table Columns (unchanged) =====
+  // ===== Desktop Table Columns =====
   const columns = [
     {
       title: "Walk-in #",
@@ -1299,13 +1304,7 @@ const WalkinList = ({
         bodyStyle={{ padding: 12 }}
         onClick={() => showWalkinDetails(w)}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
           <div style={{ fontWeight: 800 }}>{w.walkinNumber}</div>
           <Tag color={statusMeta.color} style={{ margin: 0 }}>
             {statusMeta.text}
@@ -1351,13 +1350,7 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
             <div style={{ fontWeight: 900, fontSize: 16 }}>
@@ -1369,14 +1362,7 @@ const WalkinList = ({
           </Tag>
         </div>
 
-        <div
-          style={{
-            marginTop: 10,
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
           <div onClick={(e) => e.stopPropagation()}>
             <QuickActions record={w} />
           </div>
@@ -1416,14 +1402,20 @@ const WalkinList = ({
           padding: 14px 16px !important;
           background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,250,251,0.98) 100%) !important;
         }
-        .premium-modal .ant-modal-title { font-weight: 800 !important; }
+        .premium-modal .ant-modal-title {
+          font-weight: 800 !important;
+        }
         .premium-modal .ant-modal-footer {
           border-top: 1px solid rgba(148, 163, 184, 0.25) !important;
           padding: 12px 16px !important;
           background: rgba(249,250,251,0.98) !important;
         }
-        .premium-modal .ant-modal-close { border-radius: 10px !important; }
-        .premium-modal .ant-modal-close:hover { background: rgba(148, 163, 184, 0.18) !important; }
+        .premium-modal .ant-modal-close {
+          border-radius: 10px !important;
+        }
+        .premium-modal .ant-modal-close:hover {
+          background: rgba(148, 163, 184, 0.18) !important;
+        }
         .premium-modal .ant-modal-mask {
           backdrop-filter: blur(4px);
           -webkit-backdrop-filter: blur(4px);
@@ -1477,11 +1469,7 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: "100%" }}
-            >
+            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
               <Option value="all">All Status</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1491,11 +1479,7 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select
-              value={branchFilter}
-              onChange={setBranchFilter}
-              style={{ width: "100%" }}
-            >
+            <Select value={branchFilter} onChange={setBranchFilter} style={{ width: "100%" }}>
               <Option value="all">All Branches</Option>
               {branches.map((b) => (
                 <Option key={b._id} value={b.name}>
@@ -1506,35 +1490,20 @@ const WalkinList = ({
           </Col>
 
           <Col xs={12} md={4}>
-            <Select
-              value={dateFilter}
-              onChange={setDateFilter}
-              style={{ width: "100%" }}
-            >
+            <Select value={dateFilter} onChange={setDateFilter} style={{ width: "100%" }}>
               <Option value="all">All Dates</Option>
               <Option value="today">Today</Option>
               <Option value="week">This Week</Option>
             </Select>
           </Col>
 
-          <Col
-            xs={12}
-            md={4}
-            style={{
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
+          <Col xs={12} md={4} style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
             <Button
               icon={<FilterOutlined />}
               type={hasActiveAdvancedFilters() ? "primary" : "default"}
               onClick={() => setAdvancedOpen(true)}
             >
-              {isMobile
-                ? "Advanced"
-                : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
+              {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
             </Button>
 
             <Button icon={<ClearOutlined />} onClick={clearBasicFilters}>
@@ -1546,11 +1515,7 @@ const WalkinList = ({
             </Button>
 
             {!isMobile && (
-              <Button
-                type="primary"
-                icon={<ExportOutlined />}
-                onClick={exportToExcel}
-              >
+              <Button type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export
               </Button>
             )}
@@ -1558,12 +1523,7 @@ const WalkinList = ({
 
           {isMobile && (
             <Col xs={24}>
-              <Button
-                block
-                type="primary"
-                icon={<ExportOutlined />}
-                onClick={exportToExcel}
-              >
+              <Button block type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export to Excel
               </Button>
             </Col>
@@ -1575,29 +1535,17 @@ const WalkinList = ({
       <Row gutter={[10, 10]} className="mb-4">
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="Total"
-              value={filteredWalkins.length}
-              prefix={<TeamOutlined />}
-            />
+            <Statistic title="Total" value={filteredWalkins.length} prefix={<TeamOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="In Progress"
-              value={totalInProgress}
-              prefix={<ClockCircleOutlined />}
-            />
+            <Statistic title="In Progress" value={totalInProgress} prefix={<ClockCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="Completed"
-              value={totalCompleted}
-              prefix={<CheckCircleOutlined />}
-            />
+            <Statistic title="Completed" value={totalCompleted} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
@@ -1759,9 +1707,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1777,12 +1723,7 @@ const WalkinList = ({
               <span className="text-sm font-medium">Select New Status:</span>
             </div>
 
-            <Select
-              value={selectedStatus}
-              onChange={setSelectedStatus}
-              style={{ width: "100%" }}
-              size="large"
-            >
+            <Select value={selectedStatus} onChange={setSelectedStatus} style={{ width: "100%" }} size="large">
               <Option value="draft">Draft</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1812,9 +1753,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1833,12 +1772,7 @@ const WalkinList = ({
                 <span className="text-sm font-medium">Discount:</span>
               </div>
               <div className="flex gap-2 mb-2">
-                <Select
-                  value={discountType}
-                  onChange={setDiscountType}
-                  style={{ width: 140 }}
-                  size="large"
-                >
+                <Select value={discountType} onChange={setDiscountType} style={{ width: 140 }} size="large">
                   <Option value="amount">Amount (₹)</Option>
                   <Option value="percentage">Percentage (%)</Option>
                 </Select>
@@ -1890,9 +1824,7 @@ const WalkinList = ({
                 size="large"
                 min={0}
                 max={calculateTotalAfterDiscount()}
-                formatter={(value) =>
-                  `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
+                formatter={(value) => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
               />
             </div>
@@ -1901,12 +1833,7 @@ const WalkinList = ({
               <div className="mb-2">
                 <span className="text-sm font-medium">Payment Method:</span>
               </div>
-              <Select
-                value={paymentMethod}
-                onChange={setPaymentMethod}
-                style={{ width: "100%" }}
-                size="large"
-              >
+              <Select value={paymentMethod} onChange={setPaymentMethod} style={{ width: "100%" }} size="large">
                 <Option value="cash">Cash</Option>
                 <Option value="card">Card</Option>
                 <Option value="online">Online</Option>
