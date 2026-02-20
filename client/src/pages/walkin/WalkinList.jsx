@@ -1,4 +1,10 @@
-// WalkinList.jsx (FULL FINAL - Old Details Restored + 390px Overflow Fix + Dropdown Fix + No Blank Page)
+// WalkinList.jsx (FULL + OLD DETAILS RESTORED + 390px FIX PACK)
+// ✅ Keeps: Detailed Walkin Details Modal (services/products/payment summary)
+// ✅ Keeps: Calculate & Save (button + dropdown action)
+// ✅ Keeps: Services column on desktop table
+// ✅ Keeps: Export with full fields
+// ✅ Fix: 390px overflow + Select/Dropdown popup out-of-screen
+// ✅ Fix: No blank page (columns defined)
 
 import React, { useState, useMemo } from "react";
 import {
@@ -266,7 +272,6 @@ const WalkinList = ({
       okButtonProps: { style: { display: "none" } },
       content: (
         <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
-          {/* Customer */}
           <Card size="small" title="Customer Information">
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -306,7 +311,17 @@ const WalkinList = ({
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Status</div>
                   <Tag
-                    color={getStatusTag(walkin.status).color}
+                    color={
+                      walkin.status === "completed"
+                        ? "green"
+                        : walkin.status === "cancelled"
+                        ? "red"
+                        : walkin.status === "confirmed"
+                        ? "blue"
+                        : walkin.status === "in_progress"
+                        ? "orange"
+                        : "gray"
+                    }
                     className="font-semibold"
                   >
                     {walkin.status?.toUpperCase()}
@@ -330,7 +345,6 @@ const WalkinList = ({
             )}
           </Card>
 
-          {/* Services */}
           {walkin.services?.length > 0 && (
             <Card size="small" title={`Services (${walkin.services.length})`}>
               <div className="space-y-2">
@@ -364,7 +378,6 @@ const WalkinList = ({
             </Card>
           )}
 
-          {/* Products */}
           {walkin.products?.length > 0 && (
             <Card size="small" title={`Products (${walkin.products.length})`}>
               <div className="space-y-2">
@@ -398,7 +411,6 @@ const WalkinList = ({
             </Card>
           )}
 
-          {/* Payment Summary */}
           <Card
             size="small"
             title="Payment Summary"
@@ -433,7 +445,7 @@ const WalkinList = ({
                 <span>Due Amount:</span>
                 <span
                   className={`font-bold text-lg ${
-                    (walkin.dueAmount || 0) > 0 ? "text-red-600" : "text-green-600"
+                    walkin.dueAmount > 0 ? "text-red-600" : "text-green-600"
                   }`}
                 >
                   ₹{walkin.dueAmount?.toFixed(2) || "0.00"}
@@ -442,10 +454,16 @@ const WalkinList = ({
               <div className="flex justify-between">
                 <span>Payment Status:</span>
                 <Tag
-                  color={getPaymentTag(walkin.paymentStatus).color}
+                  color={
+                    walkin.paymentStatus === "paid"
+                      ? "green"
+                      : walkin.paymentStatus === "partially_paid"
+                      ? "orange"
+                      : "red"
+                  }
                   className="font-semibold"
                 >
-                  {walkin.paymentStatus?.toUpperCase() || "UNPAID"}
+                  {walkin.paymentStatus?.toUpperCase()}
                 </Tag>
               </div>
             </div>
@@ -466,6 +484,8 @@ const WalkinList = ({
         </div>
       ),
     });
+
+    return modal;
   };
 
   const exportToExcel = () => {
@@ -476,8 +496,7 @@ const WalkinList = ({
       Email: walkin.customerEmail,
       Branch: walkin.branch,
       Seat: getSeatLabel(walkin),
-      Services:
-        walkin.services?.map((s) => s.service?.name).join(", ") || "None",
+      Services: walkin.services?.map((s) => s.service?.name).join(", ") || "None",
       Products:
         walkin.products
           ?.map((p) => `${p.product?.name} x${p.quantity}`)
@@ -933,16 +952,29 @@ const WalkinList = ({
       },
       { type: "divider" },
 
-      { key: "m1", label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>, disabled: true },
+      {
+        key: "m1",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        disabled: true,
+      },
       {
         key: "services",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Scissors className="w-4 h-4" />
               <span>Services</span>
             </span>
-            <Tag color={servicesArr.length ? "blue" : "default"} style={{ margin: 0 }}>
+            <Tag
+              color={servicesArr.length ? "blue" : "default"}
+              style={{ margin: 0 }}
+            >
               {servicesArr.length}
             </Tag>
           </div>
@@ -952,12 +984,21 @@ const WalkinList = ({
       {
         key: "employees",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Users className="w-4 h-4" />
               <span>Employees</span>
             </span>
-            <Tag color={employeesCount ? "green" : "default"} style={{ margin: 0 }}>
+            <Tag
+              color={employeesCount ? "green" : "default"}
+              style={{ margin: 0 }}
+            >
               {employeesCount}
             </Tag>
           </div>
@@ -968,12 +1009,21 @@ const WalkinList = ({
       {
         key: "products",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <ShoppingBag className="w-4 h-4" />
               <span>Products</span>
             </span>
-            <Tag color={productsArr.length ? "gold" : "default"} style={{ margin: 0 }}>
+            <Tag
+              color={productsArr.length ? "gold" : "default"}
+              style={{ margin: 0 }}
+            >
               {productsArr.length}
             </Tag>
           </div>
@@ -983,11 +1033,21 @@ const WalkinList = ({
 
       { type: "divider" },
 
-      { key: "m2", label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>, disabled: true },
+      {
+        key: "m2",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        disabled: true,
+      },
       {
         key: "status",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span>Status</span>
             <Tag color={statusMeta.color} style={{ margin: 0 }}>
               {statusMeta.text}
@@ -999,7 +1059,13 @@ const WalkinList = ({
       {
         key: "payment",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <DollarSign className="w-4 h-4" />
               Payment
@@ -1017,7 +1083,13 @@ const WalkinList = ({
       {
         key: "calc",
         label: (
-          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Calculator className="w-4 h-4" />
               Calculate & Save
@@ -1193,7 +1265,7 @@ const WalkinList = ({
     (w) => w.status === "completed"
   ).length;
 
-  // ===== Mobile Card =====
+  // ===== Mobile Card Row =====
   const MobileWalkinCard = ({ w }) => {
     const statusMeta = getStatusTag(w.status);
     const paymentMeta = getPaymentTag(w.paymentStatus);
@@ -1206,7 +1278,9 @@ const WalkinList = ({
         bodyStyle={{ padding: 12 }}
         onClick={() => showWalkinDetails(w)}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div
+          style={{ display: "flex", justifyContent: "space-between", gap: 8 }}
+        >
           <div style={{ fontWeight: 800 }}>{w.walkinNumber}</div>
           <Tag color={statusMeta.color} style={{ margin: 0 }}>
             {statusMeta.text}
@@ -1218,6 +1292,7 @@ const WalkinList = ({
           <div style={{ fontSize: 12, color: "#6b7280" }}>
             {w.customerPhone} • {w.branch}
           </div>
+
           <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>
             Seat: <span style={{ fontWeight: 700 }}>{getSeatLabel(w)}</span>
           </div>
@@ -1225,7 +1300,6 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
-        {/* Services/Products chips restored */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {(w.services || []).slice(0, 2).map((s, i) => (
             <Tag key={`s-${i}`} color="blue" style={{ margin: 0 }}>
@@ -1252,7 +1326,13 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
             <div style={{ fontWeight: 900, fontSize: 16 }}>
@@ -1264,7 +1344,14 @@ const WalkinList = ({
           </Tag>
         </div>
 
-        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
+        <div
+          style={{
+            marginTop: 10,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 8,
+          }}
+        >
           <div onClick={(e) => e.stopPropagation()}>
             <QuickActions record={w} />
           </div>
@@ -1310,16 +1397,24 @@ const WalkinList = ({
           padding: 12px 16px !important;
           background: rgba(249,250,251,0.98) !important;
         }
+        .premium-modal .ant-modal-close { border-radius: 10px !important; }
+        .premium-modal .ant-modal-close:hover { background: rgba(148, 163, 184, 0.18) !important; }
         .premium-modal .ant-modal-mask { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 
-        /* ✅ Mobile UI */
+        /* ✅ Mobile polish */
         @media (max-width: 767px) {
           .mobile-actions { width: 100%; justify-content: space-between; }
           .mobile-walkin-card { width: 100%; }
           .ant-list-item { padding: 6px 0 !important; }
-          .ant-dropdown-menu-item { padding: 12px 12px !important; border-radius: 12px; margin: 6px 6px; }
+
+          .ant-dropdown-menu-item {
+            padding: 12px 12px !important;
+            border-radius: 12px;
+            margin: 6px 6px;
+          }
           .ant-dropdown-menu { border-radius: 14px !important; }
 
+          /* ✅ Center modals in mobile */
           .mobile-center-modal .ant-modal {
             width: 92vw !important;
             max-width: 92vw !important;
@@ -1335,16 +1430,14 @@ const WalkinList = ({
           }
         }
 
-        /* ✅ 390px HARD FIX: stop any horizontal overflow + selects within container */
+        /* ✅ 390px overflow FIX PACK (filters + selects + page) */
         @media (max-width: 390px) {
           html, body, #root { width: 100%; overflow-x: hidden !important; }
 
-          .walkin-filters-card,
-          .walkin-filters-card .ant-card-body {
+          .walkin-filters-card, .walkin-filters-card .ant-card-body {
             width: 100%;
             overflow-x: hidden !important;
           }
-
           .walkin-filters-row {
             margin-left: 0 !important;
             margin-right: 0 !important;
@@ -1363,38 +1456,22 @@ const WalkinList = ({
             min-width: 0 !important;
             max-width: 100% !important;
           }
-          .walkin-filters-card .ant-select-selector {
-            min-width: 0 !important;
-            max-width: 100% !important;
-          }
+          .walkin-filters-card .ant-select-selector { min-width: 0 !important; max-width: 100% !important; }
           .walkin-filters-card .ant-select-selection-item {
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
             max-width: 100% !important;
           }
-
-          /* buttons stack */
-          .walkin-filters-actions-col {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 10px !important;
-            width: 100% !important;
-          }
-          .walkin-btn { width: 100% !important; min-width: 0 !important; }
-
           .ant-select-dropdown { max-width: 92vw !important; }
         }
 
+        /* dropdown hover */
         .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
 
       {/* Filters */}
-      <Card
-        size="small"
-        className="mb-4 walkin-filters-card"
-        style={{ borderRadius: 14 }}
-      >
+      <Card size="small" className="mb-4 walkin-filters-card" style={{ borderRadius: 14 }}>
         <Row gutter={[10, 10]} align="middle" className="walkin-filters-row">
           <Col xs={24} md={8} className="walkin-filters-col">
             <Input
@@ -1406,6 +1483,7 @@ const WalkinList = ({
             />
           </Col>
 
+          {/* ✅ Important: xs=24 so 390px me overflow na ho */}
           <Col xs={24} sm={12} md={4} className="walkin-filters-col">
             <Select
               value={statusFilter}
@@ -1452,29 +1530,42 @@ const WalkinList = ({
 
           <Col
             xs={24}
-            md={8}
-            className="walkin-filters-col walkin-filters-actions-col"
-            style={!isMobile ? { display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" } : undefined}
+            md={4}
+            className="walkin-filters-col"
+            style={{
+              display: "flex",
+              justifyContent: isMobile ? "stretch" : "flex-end",
+              gap: 8,
+              flexWrap: "wrap",
+            }}
           >
             <Button
-              className="walkin-btn"
               icon={<FilterOutlined />}
               type={hasActiveAdvancedFilters() ? "primary" : "default"}
               onClick={() => setAdvancedOpen(true)}
+              style={isMobile ? { flex: 1 } : undefined}
             >
               {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
             </Button>
 
-            <Button className="walkin-btn" icon={<ClearOutlined />} onClick={clearBasicFilters}>
+            <Button
+              icon={<ClearOutlined />}
+              onClick={clearBasicFilters}
+              style={isMobile ? { flex: 1 } : undefined}
+            >
               Clear
             </Button>
 
-            <Button className="walkin-btn" icon={<ReloadOutlined />} onClick={fetchWalkins}>
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={fetchWalkins}
+              style={isMobile ? { flex: 1 } : undefined}
+            >
               Refresh
             </Button>
 
             {!isMobile && (
-              <Button className="walkin-btn" type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
+              <Button type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export
               </Button>
             )}
@@ -1509,7 +1600,12 @@ const WalkinList = ({
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic title="Amount" value={totalAmountSum} precision={2} formatter={(value) => `₹${value}`} />
+            <Statistic
+              title="Amount"
+              value={totalAmountSum}
+              precision={2}
+              formatter={(value) => `₹${value}`}
+            />
           </Card>
         </Col>
       </Row>
@@ -1660,9 +1756,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1714,9 +1808,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1821,7 +1913,11 @@ const WalkinList = ({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Due Amount:</span>
                 <span className="font-semibold">
-                  ₹{Math.max(calculateTotalAfterDiscount() - (paymentAmount || 0), 0).toFixed(2)}
+                  ₹
+                  {Math.max(
+                    calculateTotalAfterDiscount() - (paymentAmount || 0),
+                    0
+                  ).toFixed(2)}
                 </span>
               </div>
             </div>
