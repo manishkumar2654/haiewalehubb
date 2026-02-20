@@ -1,10 +1,3 @@
-// WalkinList.jsx (FULL PAGE + ALL DETAILS BACK + 390px DROPDOWN OVERFLOW FIX)
-// ✅ Full features intact (QuickActions items NOT reduced)
-// ✅ 390px: Dropdown never goes outside screen
-// ✅ 390px: Filters never overflow
-// ✅ Mobile cards + Desktop table included
-// ✅ Details modal: customer + seat + services + products + payment summary included
-
 import React, { useState, useMemo } from "react";
 import {
   Download,
@@ -43,6 +36,7 @@ import {
   ReloadOutlined,
   ExportOutlined,
   TeamOutlined,
+  DollarOutlined,
   ClockCircleOutlined,
   CheckCircleOutlined,
   FilterOutlined,
@@ -255,14 +249,17 @@ const WalkinList = ({
           />
         </div>
       ),
+
+      // ✅ center + premium wrap
       width: isMobile ? "92vw" : 820,
       centered: isMobile ? true : undefined,
       style: isMobile ? { padding: 0 } : undefined,
-      wrapClassName: isMobile
-        ? "premium-modal mobile-center-modal"
-        : "premium-modal",
+      wrapClassName: isMobile ? "premium-modal mobile-center-modal" : "premium-modal",
+
+      // ✅ DO NOT auto close by click outside / ESC
       maskClosable: false,
       keyboard: false,
+
       icon: null,
       closable: true,
       okButtonProps: { style: { display: "none" } },
@@ -307,7 +304,17 @@ const WalkinList = ({
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Status</div>
                   <Tag
-                    color={getStatusTag(walkin.status).color}
+                    color={
+                      walkin.status === "completed"
+                        ? "green"
+                        : walkin.status === "cancelled"
+                        ? "red"
+                        : walkin.status === "confirmed"
+                        ? "blue"
+                        : walkin.status === "in_progress"
+                        ? "orange"
+                        : "gray"
+                    }
                     className="font-semibold"
                   >
                     {walkin.status?.toUpperCase()}
@@ -386,7 +393,9 @@ const WalkinList = ({
                         ₹{product.total?.toFixed(2) || "0.00"}
                       </div>
                       <div className="text-xs text-gray-600">
-                        {product.stockDeducted ? "✓ Stock deducted" : "Stock pending"}
+                        {product.stockDeducted
+                          ? "✓ Stock deducted"
+                          : "Stock pending"}
                       </div>
                     </div>
                   </div>
@@ -438,10 +447,16 @@ const WalkinList = ({
               <div className="flex justify-between">
                 <span>Payment Status:</span>
                 <Tag
-                  color={getPaymentTag(walkin.paymentStatus).color}
+                  color={
+                    walkin.paymentStatus === "paid"
+                      ? "green"
+                      : walkin.paymentStatus === "partially_paid"
+                      ? "orange"
+                      : "red"
+                  }
                   className="font-semibold"
                 >
-                  {getPaymentTag(walkin.paymentStatus).text}
+                  {walkin.paymentStatus?.toUpperCase()}
                 </Tag>
               </div>
             </div>
@@ -696,11 +711,16 @@ const WalkinList = ({
         wrapClassName: isMobile
           ? "premium-modal mobile-center-modal"
           : "premium-modal",
+
+        // ✅ center + premium
         width: isMobile ? "92vw" : 520,
         centered: isMobile ? true : undefined,
         style: isMobile ? { padding: 0 } : undefined,
+
+        // ✅ DO NOT auto close by click outside / ESC
         maskClosable: false,
         keyboard: false,
+
         content: (
           <div className="space-y-2 py-4">
             <div className="flex justify-between">
@@ -861,7 +881,7 @@ const WalkinList = ({
     walkinNumberFilter,
   ]);
 
-  // ===== Quick Actions (FULL ITEMS + 390px OVERFLOW SAFE) =====
+  // ===== Quick Actions =====
   const QuickActions = ({ record }) => {
     const servicesArr = record.services || [];
     const productsArr = record.products || [];
@@ -923,8 +943,11 @@ const WalkinList = ({
       },
       { type: "divider" },
 
-      { key: "m1", label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>, disabled: true },
-
+      {
+        key: "m1",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
+        disabled: true,
+      },
       {
         key: "services",
         label: (
@@ -974,8 +997,11 @@ const WalkinList = ({
 
       { type: "divider" },
 
-      { key: "m2", label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>, disabled: true },
-
+      {
+        key: "m2",
+        label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
+        disabled: true,
+      },
       {
         key: "status",
         label: (
@@ -1044,14 +1070,8 @@ const WalkinList = ({
         <Dropdown
           trigger={["click"]}
           placement="bottomRight"
+          overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
           menu={{ items: menuItems }}
-          // ✅ THE REAL FIX: NO FIXED 300px ON MOBILE
-          overlayStyle={{
-            width: isMobile ? "calc(100vw - 32px)" : 320,
-            maxWidth: isMobile ? "calc(100vw - 16px)" : 420,
-          }}
-          // ✅ keep dropdown inside card (prevents weird left offsets)
-          getPopupContainer={(trigger) => trigger.parentElement}
         >
           <Button
             size="small"
@@ -1063,7 +1083,7 @@ const WalkinList = ({
     );
   };
 
-  // ===== Desktop Table Columns (FULL) =====
+  // ===== Desktop Table Columns (unchanged) =====
   const columns = [
     {
       title: "Walk-in #",
@@ -1261,7 +1281,7 @@ const WalkinList = ({
   return (
     <>
       <style>{`
-        /* ✅ Premium modal look (safe, minimal) */
+        /* ✅ Premium look (safe, minimal) */
         .premium-modal .ant-modal-content {
           border-radius: 16px !important;
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18) !important;
@@ -1291,7 +1311,7 @@ const WalkinList = ({
           -webkit-backdrop-filter: blur(4px);
         }
 
-        /* ✅ only mobile tweaks */
+        /* ✅ only mobile fixes (desktop unchanged) */
         @media (max-width: 767px) {
           .mobile-actions { width: 100%; justify-content: space-between; }
           .mobile-walkin-card { width: 100%; }
@@ -1321,77 +1341,14 @@ const WalkinList = ({
           }
         }
 
-        /* ✅ 390px HARD FIX PACK (filters + dropdown overflow killer) */
-        @media (max-width: 390px) {
-          html, body, #root { width: 100%; overflow-x: hidden !important; }
-
-          .walkin-filters-card,
-          .walkin-filters-card .ant-card-body {
-            width: 100%;
-            overflow-x: hidden !important;
-          }
-
-          .walkin-filters-row {
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-            width: 100% !important;
-          }
-
-          .walkin-filters-col {
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            min-width: 0 !important;
-            max-width: 100% !important;
-          }
-
-          .walkin-filters-card .ant-input-affix-wrapper,
-          .walkin-filters-card .ant-select {
-            width: 100% !important;
-            min-width: 0 !important;
-            max-width: 100% !important;
-          }
-          .walkin-filters-card .ant-select-selector {
-            min-width: 0 !important;
-            max-width: 100% !important;
-          }
-          .walkin-filters-card .ant-select-selection-item {
-            overflow: hidden !important;
-            text-overflow: ellipsis !important;
-            white-space: nowrap !important;
-            max-width: 100% !important;
-          }
-
-          .walkin-filters-actions-col {
-            display: grid !important;
-            grid-template-columns: 1fr !important;
-            gap: 10px !important;
-            width: 100% !important;
-          }
-          .walkin-btn { width: 100% !important; min-width: 0 !important; }
-
-          /* ✅ REAL dropdown width clamp (NO fixed px) */
-          .ant-dropdown {
-            width: calc(100vw - 24px) !important;
-            max-width: calc(100vw - 24px) !important;
-          }
-          .ant-dropdown-menu {
-            width: 100% !important;
-            max-width: 100% !important;
-          }
-        }
-
         /* dropdown polish */
         .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
 
       {/* Filters */}
-      <Card
-        size="small"
-        className="mb-4 walkin-filters-card"
-        style={{ borderRadius: 14 }}
-      >
-        <Row gutter={[10, 10]} align="middle" className="walkin-filters-row">
-          <Col xs={24} md={8} className="walkin-filters-col">
+      <Card size="small" className="mb-4" style={{ borderRadius: 14 }}>
+        <Row gutter={[10, 10]} align="middle">
+          <Col xs={24} md={8}>
             <Input
               placeholder="Search name / walk-in # / phone"
               prefix={<SearchOutlined />}
@@ -1401,13 +1358,8 @@ const WalkinList = ({
             />
           </Col>
 
-          <Col xs={24} sm={12} md={4} className="walkin-filters-col">
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: "100%" }}
-              getPopupContainer={(trigger) => trigger.parentElement}
-            >
+          <Col xs={12} md={4}>
+            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
               <Option value="all">All Status</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1416,13 +1368,8 @@ const WalkinList = ({
             </Select>
           </Col>
 
-          <Col xs={24} sm={12} md={4} className="walkin-filters-col">
-            <Select
-              value={branchFilter}
-              onChange={setBranchFilter}
-              style={{ width: "100%" }}
-              getPopupContainer={(trigger) => trigger.parentElement}
-            >
+          <Col xs={12} md={4}>
+            <Select value={branchFilter} onChange={setBranchFilter} style={{ width: "100%" }}>
               <Option value="all">All Branches</Option>
               {branches.map((b) => (
                 <Option key={b._id} value={b.name}>
@@ -1432,52 +1379,40 @@ const WalkinList = ({
             </Select>
           </Col>
 
-          <Col xs={24} sm={12} md={4} className="walkin-filters-col">
-            <Select
-              value={dateFilter}
-              onChange={setDateFilter}
-              style={{ width: "100%" }}
-              getPopupContainer={(trigger) => trigger.parentElement}
-            >
+          <Col xs={12} md={4}>
+            <Select value={dateFilter} onChange={setDateFilter} style={{ width: "100%" }}>
               <Option value="all">All Dates</Option>
               <Option value="today">Today</Option>
               <Option value="week">This Week</Option>
             </Select>
           </Col>
 
-          <Col
-            xs={24}
-            md={4}
-            className="walkin-filters-col walkin-filters-actions-col"
-          >
+          <Col xs={12} md={4} style={{ display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" }}>
             <Button
-              className="walkin-btn"
               icon={<FilterOutlined />}
               type={hasActiveAdvancedFilters() ? "primary" : "default"}
               onClick={() => setAdvancedOpen(true)}
             >
-              {isMobile
-                ? "Advanced"
-                : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
+              {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
             </Button>
 
-            <Button className="walkin-btn" icon={<ClearOutlined />} onClick={clearBasicFilters}>
+            <Button icon={<ClearOutlined />} onClick={clearBasicFilters}>
               Clear
             </Button>
 
-            <Button className="walkin-btn" icon={<ReloadOutlined />} onClick={fetchWalkins}>
+            <Button icon={<ReloadOutlined />} onClick={fetchWalkins}>
               Refresh
             </Button>
 
             {!isMobile && (
-              <Button className="walkin-btn" type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
+              <Button type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export
               </Button>
             )}
           </Col>
 
           {isMobile && (
-            <Col xs={24} className="walkin-filters-col">
+            <Col xs={24}>
               <Button block type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export to Excel
               </Button>
@@ -1505,7 +1440,13 @@ const WalkinList = ({
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic title="Amount" value={totalAmountSum} precision={2} formatter={(value) => `₹${value}`} />
+            <Statistic
+              title="Amount"
+              value={totalAmountSum}
+              prefix={<DollarOutlined />}
+              precision={2}
+              formatter={(value) => `₹${value}`}
+            />
           </Card>
         </Col>
       </Row>
@@ -1543,6 +1484,7 @@ const WalkinList = ({
         open={advancedOpen}
         onClose={() => setAdvancedOpen(false)}
         width={isMobile ? "100%" : 440}
+        className={isMobile ? "mobile-drawer" : ""}
         extra={
           <Space>
             <Button onClick={clearAdvancedFilters} icon={<ClearOutlined />}>
@@ -1665,6 +1607,10 @@ const WalkinList = ({
               <Tag color={getStatusTag(currentWalkin.status).color}>
                 {(currentWalkin.status || "draft").toUpperCase()}
               </Tag>
+            </div>
+
+            <div className="mb-2">
+              <span className="text-sm font-medium">Select New Status:</span>
             </div>
 
             <Select value={selectedStatus} onChange={setSelectedStatus} style={{ width: "100%" }} size="large">
