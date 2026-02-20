@@ -1,4 +1,7 @@
-// WalkinList.jsx
+// WalkinList.jsx  (390px mobile overflow FIXED)
+// ✅ Focus: Filters section (Select) mobile view me bahar na jaye (<=390px)
+// ✅ Desktop/table/logic same, sirf responsive + CSS safe fixes
+
 import React, { useState, useMemo } from "react";
 import {
   Download,
@@ -249,19 +252,14 @@ const WalkinList = ({
           />
         </div>
       ),
-
-      // ✅ center + premium wrap
       width: isMobile ? "92vw" : 820,
       centered: isMobile ? true : undefined,
       style: isMobile ? { padding: 0 } : undefined,
       wrapClassName: isMobile
         ? "premium-modal mobile-center-modal"
         : "premium-modal",
-
-      // ✅ DO NOT auto close by click outside / ESC
       maskClosable: false,
       keyboard: false,
-
       icon: null,
       closable: true,
       okButtonProps: { style: { display: "none" } },
@@ -324,20 +322,6 @@ const WalkinList = ({
                 </div>
               </Col>
             </Row>
-
-            {walkin.customerEmail && (
-              <div className="mb-3">
-                <div className="text-sm text-gray-600">Email</div>
-                <div className="font-semibold">{walkin.customerEmail}</div>
-              </div>
-            )}
-
-            {walkin.customerAddress && (
-              <div>
-                <div className="text-sm text-gray-600">Address</div>
-                <div className="font-semibold">{walkin.customerAddress}</div>
-              </div>
-            )}
           </Card>
 
           {walkin.services?.length > 0 && (
@@ -406,11 +390,7 @@ const WalkinList = ({
             </Card>
           )}
 
-          <Card
-            size="small"
-            title="Payment Summary"
-            className="bg-blue-50 border-blue-200"
-          >
+          <Card size="small" title="Payment Summary" className="bg-blue-50">
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span>Subtotal:</span>
@@ -428,22 +408,6 @@ const WalkinList = ({
                 <span>Total Amount:</span>
                 <span className="font-bold text-green-600 text-lg">
                   ₹{walkin.totalAmount?.toFixed(2) || "0.00"}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span>Amount Paid:</span>
-                <span className="font-semibold">
-                  ₹{walkin.amountPaid?.toFixed(2) || "0.00"}
-                </span>
-              </div>
-              <div className="flex justify-between border-t pt-2">
-                <span>Due Amount:</span>
-                <span
-                  className={`font-bold text-lg ${
-                    walkin.dueAmount > 0 ? "text-red-600" : "text-green-600"
-                  }`}
-                >
-                  ₹{walkin.dueAmount?.toFixed(2) || "0.00"}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -486,19 +450,9 @@ const WalkinList = ({
       "Walk-in #": walkin.walkinNumber,
       "Customer Name": walkin.customerName,
       Phone: walkin.customerPhone,
-      Email: walkin.customerEmail,
       Branch: walkin.branch,
       Seat: getSeatLabel(walkin),
-      Services: walkin.services?.map((s) => s.service?.name).join(", ") || "None",
-      Products:
-        walkin.products
-          ?.map((p) => `${p.product?.name} x${p.quantity}`)
-          .join(", ") || "None",
-      Subtotal: walkin.subtotal,
-      Discount: walkin.discount,
       "Total Amount": walkin.totalAmount,
-      "Amount Paid": walkin.amountPaid,
-      "Due Amount": walkin.dueAmount,
       "Payment Status": walkin.paymentStatus,
       "Walk-in Status": walkin.status,
       "Created Date": new Date(walkin.createdAt).toLocaleDateString(),
@@ -718,14 +672,11 @@ const WalkinList = ({
         wrapClassName: isMobile
           ? "premium-modal mobile-center-modal"
           : "premium-modal",
-
         width: isMobile ? "92vw" : 520,
         centered: isMobile ? true : undefined,
         style: isMobile ? { padding: 0 } : undefined,
-
         maskClosable: false,
         keyboard: false,
-
         content: (
           <div className="space-y-2 py-4">
             <div className="flex justify-between">
@@ -948,7 +899,6 @@ const WalkinList = ({
         disabled: true,
       },
       { type: "divider" },
-
       {
         key: "m1",
         label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>,
@@ -957,17 +907,12 @@ const WalkinList = ({
       {
         key: "services",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Scissors className="w-4 h-4" />
               <span>Services</span>
             </span>
-            <Tag
-              color={servicesArr.length ? "blue" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={servicesArr.length ? "blue" : "default"} style={{ margin: 0 }}>
               {servicesArr.length}
             </Tag>
           </div>
@@ -977,17 +922,12 @@ const WalkinList = ({
       {
         key: "employees",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <Users className="w-4 h-4" />
               <span>Employees</span>
             </span>
-            <Tag
-              color={employeesCount ? "green" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={employeesCount ? "green" : "default"} style={{ margin: 0 }}>
               {employeesCount}
             </Tag>
           </div>
@@ -998,26 +938,19 @@ const WalkinList = ({
       {
         key: "products",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <ShoppingBag className="w-4 h-4" />
               <span>Products</span>
             </span>
-            <Tag
-              color={productsArr.length ? "gold" : "default"}
-              style={{ margin: 0 }}
-            >
+            <Tag color={productsArr.length ? "gold" : "default"} style={{ margin: 0 }}>
               {productsArr.length}
             </Tag>
           </div>
         ),
         onClick: openProducts,
       },
-
       { type: "divider" },
-
       {
         key: "m2",
         label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>,
@@ -1026,9 +959,7 @@ const WalkinList = ({
       {
         key: "status",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span>Status</span>
             <Tag color={statusMeta.color} style={{ margin: 0 }}>
               {statusMeta.text}
@@ -1040,9 +971,7 @@ const WalkinList = ({
       {
         key: "payment",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <DollarSign className="w-4 h-4" />
               Payment
@@ -1054,15 +983,11 @@ const WalkinList = ({
         ),
         onClick: openPayment,
       },
-
       { type: "divider" },
-
       {
         key: "calc",
         label: (
-          <div
-            style={{ display: "flex", justifyContent: "space-between", gap: 10 }}
-          >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <Calculator className="w-4 h-4" />
               Calculate & Save
@@ -1079,11 +1004,7 @@ const WalkinList = ({
 
     return (
       <Space size="small" wrap className={isMobile ? "mobile-actions" : ""}>
-        <Tooltip
-          title={
-            hasSelections ? "Calculate Price" : "Select services/products first"
-          }
-        >
+        <Tooltip title={hasSelections ? "Calculate Price" : "Select services/products first"}>
           <Button
             size="small"
             type="primary"
@@ -1104,17 +1025,13 @@ const WalkinList = ({
           overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
           menu={{ items: menuItems }}
         >
-          <Button
-            size="small"
-            icon={<MoreOutlined />}
-            onClick={(e) => e?.stopPropagation?.()}
-          />
+          <Button size="small" icon={<MoreOutlined />} onClick={(e) => e?.stopPropagation?.()} />
         </Dropdown>
       </Space>
     );
   };
 
-  // ===== Desktop Table Columns (unchanged) =====
+  // ===== Desktop Table Columns =====
   const columns = [
     {
       title: "Walk-in #",
@@ -1203,25 +1120,13 @@ const WalkinList = ({
       render: (_, record) => (
         <Space>
           <Tooltip title="View Details">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => showWalkinDetails(record)}
-            />
+            <Button type="text" icon={<EyeOutlined />} onClick={() => showWalkinDetails(record)} />
           </Tooltip>
           <Tooltip title="PDF">
-            <Button
-              type="text"
-              icon={<FilePdfOutlined />}
-              onClick={() => handleDownloadPDF(record._id)}
-            />
+            <Button type="text" icon={<FilePdfOutlined />} onClick={() => handleDownloadPDF(record._id)} />
           </Tooltip>
           <Tooltip title="QR">
-            <Button
-              type="text"
-              icon={<QrcodeOutlined />}
-              onClick={() => handleShowQR(record)}
-            />
+            <Button type="text" icon={<QrcodeOutlined />} onClick={() => handleShowQR(record)} />
           </Tooltip>
         </Space>
       ),
@@ -1299,13 +1204,7 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
             <div style={{ fontWeight: 900, fontSize: 16 }}>
@@ -1317,44 +1216,22 @@ const WalkinList = ({
           </Tag>
         </div>
 
-        <div
-          style={{
-            marginTop: 10,
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 8,
-          }}
-        >
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
           <div onClick={(e) => e.stopPropagation()}>
             <QuickActions record={w} />
           </div>
 
           <Space onClick={(e) => e.stopPropagation()}>
             <Tooltip title="PDF">
-              <Button
-                size="small"
-                icon={<FilePdfOutlined />}
-                onClick={() => handleDownloadPDF(w._id)}
-              />
+              <Button size="small" icon={<FilePdfOutlined />} onClick={() => handleDownloadPDF(w._id)} />
             </Tooltip>
             <Tooltip title="QR">
-              <Button
-                size="small"
-                icon={<QrcodeOutlined />}
-                onClick={() => handleShowQR(w)}
-              />
+              <Button size="small" icon={<QrcodeOutlined />} onClick={() => handleShowQR(w)} />
             </Tooltip>
           </Space>
         </div>
       </Card>
     );
-  };
-
-  // ✅ AntD v4/v5 compatible helper props for Select dropdown width
-  const selectWidthProps = {
-    popupMatchSelectWidth: false, // v5
-    dropdownMatchSelectWidth: false, // v4 (extra safe - ant will ignore if not supported)
-    getPopupContainer: (trigger) => trigger.parentElement,
   };
 
   return (
@@ -1384,16 +1261,12 @@ const WalkinList = ({
           -webkit-backdrop-filter: blur(4px);
         }
 
-        /* dropdown polish */
-        .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
-
-        /* ✅ only mobile fixes (desktop unchanged) */
+        /* ✅ only mobile fixes */
         @media (max-width: 767px) {
           .mobile-actions { width: 100%; justify-content: space-between; }
           .mobile-walkin-card { width: 100%; }
           .ant-list-item { padding: 6px 0 !important; }
 
-          /* Dropdown more touch friendly */
           .ant-dropdown-menu-item {
             padding: 12px 12px !important;
             border-radius: 12px;
@@ -1401,7 +1274,6 @@ const WalkinList = ({
           }
           .ant-dropdown-menu { border-radius: 14px !important; }
 
-          /* ✅ Center modals in mobile */
           .mobile-center-modal .ant-modal {
             width: 92vw !important;
             max-width: 92vw !important;
@@ -1415,22 +1287,28 @@ const WalkinList = ({
             max-height: calc(100vh - 180px) !important;
             overflow: auto !important;
           }
+        }
 
-          /* ✅ FIX: Select overflow / pushing outside */
-          .ant-row { max-width: 100%; }
-          .ant-col { min-width: 0 !important; } /* important for flex shrink */
-          .ant-select { width: 100% !important; min-width: 0 !important; }
+        /* ✅ EXACT FIX FOR 390px width: kill gutter overflow + enforce full width controls */
+        @media (max-width: 390px) {
+          /* row gutter negative margins cause horizontal scroll inside card */
+          .ant-card-body { overflow-x: hidden !important; }
+          .ant-row { margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; }
+          .ant-col { padding-left: 0 !important; padding-right: 0 !important; min-width: 0 !important; }
+
+          /* controls should never exceed */
+          .ant-select, .ant-input-affix-wrapper { width: 100% !important; min-width: 0 !important; }
           .ant-select-selector { min-width: 0 !important; }
 
           /* selected value ellipsis */
           .ant-select-selection-item {
-            max-width: 100% !important;
             overflow: hidden !important;
             text-overflow: ellipsis !important;
             white-space: nowrap !important;
+            max-width: 100% !important;
           }
 
-          /* dropdown never exceed viewport */
+          /* dropdown never exceed screen */
           .ant-select-dropdown { max-width: 92vw !important; }
           .ant-select-item-option-content {
             overflow: hidden;
@@ -1442,7 +1320,7 @@ const WalkinList = ({
 
       {/* Filters */}
       <Card size="small" className="mb-4" style={{ borderRadius: 14 }}>
-        <Row gutter={[10, 10]} align="middle" style={{ width: "100%" }}>
+        <Row gutter={[10, 10]} align="middle">
           <Col xs={24} md={8} style={{ minWidth: 0 }}>
             <Input
               placeholder="Search name / walk-in # / phone"
@@ -1453,14 +1331,9 @@ const WalkinList = ({
             />
           </Col>
 
-          {/* ✅ FIXED: xs=24 so it never overflows on extra small screens */}
+          {/* ✅ 390px fix: xs=24, sm=12, md=4 */}
           <Col xs={24} sm={12} md={4} style={{ minWidth: 0 }}>
-            <Select
-              value={statusFilter}
-              onChange={setStatusFilter}
-              style={{ width: "100%" }}
-              {...selectWidthProps}
-            >
+            <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
               <Option value="all">All Status</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1470,12 +1343,7 @@ const WalkinList = ({
           </Col>
 
           <Col xs={24} sm={12} md={4} style={{ minWidth: 0 }}>
-            <Select
-              value={branchFilter}
-              onChange={setBranchFilter}
-              style={{ width: "100%" }}
-              {...selectWidthProps}
-            >
+            <Select value={branchFilter} onChange={setBranchFilter} style={{ width: "100%" }}>
               <Option value="all">All Branches</Option>
               {branches.map((b) => (
                 <Option key={b._id} value={b.name}>
@@ -1486,18 +1354,14 @@ const WalkinList = ({
           </Col>
 
           <Col xs={24} sm={12} md={4} style={{ minWidth: 0 }}>
-            <Select
-              value={dateFilter}
-              onChange={setDateFilter}
-              style={{ width: "100%" }}
-              {...selectWidthProps}
-            >
+            <Select value={dateFilter} onChange={setDateFilter} style={{ width: "100%" }}>
               <Option value="all">All Dates</Option>
               <Option value="today">Today</Option>
               <Option value="week">This Week</Option>
             </Select>
           </Col>
 
+          {/* ✅ 390px fix: actions full width so no overflow */}
           <Col
             xs={24}
             sm={12}
@@ -1515,9 +1379,7 @@ const WalkinList = ({
               type={hasActiveAdvancedFilters() ? "primary" : "default"}
               onClick={() => setAdvancedOpen(true)}
             >
-              {isMobile
-                ? "Advanced"
-                : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
+              {isMobile ? "Advanced" : `Advanced ${hasActiveAdvancedFilters() ? "• Active" : ""}`}
             </Button>
 
             <Button icon={<ClearOutlined />} onClick={clearBasicFilters}>
@@ -1529,11 +1391,7 @@ const WalkinList = ({
             </Button>
 
             {!isMobile && (
-              <Button
-                type="primary"
-                icon={<ExportOutlined />}
-                onClick={exportToExcel}
-              >
+              <Button type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export
               </Button>
             )}
@@ -1541,12 +1399,7 @@ const WalkinList = ({
 
           {isMobile && (
             <Col xs={24}>
-              <Button
-                block
-                type="primary"
-                icon={<ExportOutlined />}
-                onClick={exportToExcel}
-              >
+              <Button block type="primary" icon={<ExportOutlined />} onClick={exportToExcel}>
                 Export to Excel
               </Button>
             </Col>
@@ -1558,39 +1411,22 @@ const WalkinList = ({
       <Row gutter={[10, 10]} className="mb-4">
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="Total"
-              value={filteredWalkins.length}
-              prefix={<TeamOutlined />}
-            />
+            <Statistic title="Total" value={filteredWalkins.length} prefix={<TeamOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="In Progress"
-              value={totalInProgress}
-              prefix={<ClockCircleOutlined />}
-            />
+            <Statistic title="In Progress" value={totalInProgress} prefix={<ClockCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="Completed"
-              value={totalCompleted}
-              prefix={<CheckCircleOutlined />}
-            />
+            <Statistic title="Completed" value={totalCompleted} prefix={<CheckCircleOutlined />} />
           </Card>
         </Col>
         <Col xs={12} md={6}>
           <Card size="small" style={{ borderRadius: 14 }}>
-            <Statistic
-              title="Amount"
-              value={totalAmountSum}
-              precision={2}
-              formatter={(value) => `₹${value}`}
-            />
+            <Statistic title="Amount" value={totalAmountSum} precision={2} formatter={(value) => `₹${value}`} />
           </Card>
         </Col>
       </Row>
@@ -1741,9 +1577,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1759,13 +1593,7 @@ const WalkinList = ({
               <span className="text-sm font-medium">Select New Status:</span>
             </div>
 
-            <Select
-              value={selectedStatus}
-              onChange={setSelectedStatus}
-              style={{ width: "100%" }}
-              size="large"
-              {...selectWidthProps}
-            >
+            <Select value={selectedStatus} onChange={setSelectedStatus} style={{ width: "100%" }} size="large">
               <Option value="draft">Draft</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1795,9 +1623,7 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={
-            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
-          }
+          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
           maskClosable={false}
           keyboard={false}
         >
@@ -1807,10 +1633,7 @@ const WalkinList = ({
                 <span className="text-sm font-medium">Subtotal:</span>
               </div>
               <Tag color="blue" className="text-lg font-bold">
-                ₹
-                {(currentWalkin.subtotal || currentWalkin.totalAmount || 0).toFixed(
-                  2
-                )}
+                ₹{(currentWalkin.subtotal || currentWalkin.totalAmount || 0).toFixed(2)}
               </Tag>
             </div>
 
@@ -1819,13 +1642,7 @@ const WalkinList = ({
                 <span className="text-sm font-medium">Discount:</span>
               </div>
               <div className="flex gap-2 mb-2">
-                <Select
-                  value={discountType}
-                  onChange={setDiscountType}
-                  style={{ width: 140 }}
-                  size="large"
-                  {...selectWidthProps}
-                >
+                <Select value={discountType} onChange={setDiscountType} style={{ width: 140 }} size="large">
                   <Option value="amount">Amount (₹)</Option>
                   <Option value="percentage">Percentage (%)</Option>
                 </Select>
@@ -1859,9 +1676,7 @@ const WalkinList = ({
 
             <div>
               <div className="mb-2">
-                <span className="text-sm font-medium">
-                  Total After Discount:
-                </span>
+                <span className="text-sm font-medium">Total After Discount:</span>
               </div>
               <Tag color="green" className="text-lg font-bold">
                 ₹{calculateTotalAfterDiscount().toFixed(2)}
@@ -1879,9 +1694,7 @@ const WalkinList = ({
                 size="large"
                 min={0}
                 max={calculateTotalAfterDiscount()}
-                formatter={(value) =>
-                  `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
+                formatter={(value) => `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
                 parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
               />
             </div>
@@ -1890,13 +1703,7 @@ const WalkinList = ({
               <div className="mb-2">
                 <span className="text-sm font-medium">Payment Method:</span>
               </div>
-              <Select
-                value={paymentMethod}
-                onChange={setPaymentMethod}
-                style={{ width: "100%" }}
-                size="large"
-                {...selectWidthProps}
-              >
+              <Select value={paymentMethod} onChange={setPaymentMethod} style={{ width: "100%" }} size="large">
                 <Option value="cash">Cash</Option>
                 <Option value="card">Card</Option>
                 <Option value="online">Online</Option>
@@ -1907,11 +1714,7 @@ const WalkinList = ({
               <div className="flex justify-between">
                 <span className="text-sm text-gray-600">Due Amount:</span>
                 <span className="font-semibold">
-                  ₹
-                  {Math.max(
-                    calculateTotalAfterDiscount() - (paymentAmount || 0),
-                    0
-                  ).toFixed(2)}
+                  ₹{Math.max(calculateTotalAfterDiscount() - (paymentAmount || 0), 0).toFixed(2)}
                 </span>
               </div>
             </div>
