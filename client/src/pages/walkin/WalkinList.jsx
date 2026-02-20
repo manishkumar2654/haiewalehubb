@@ -1443,7 +1443,7 @@ const WalkinList = ({
             <Statistic
               title="Amount"
               value={totalAmountSum}
-              prefix={<DollarOutlined />}
+            
               precision={2}
               formatter={(value) => `₹${value}`}
             />
