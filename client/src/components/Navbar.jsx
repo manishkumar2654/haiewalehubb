@@ -293,18 +293,18 @@ const Navbar = () => {
               )}
 
               {/* Cart Icon - Only for logged in users */}
-              {user && (
+              {/* {user && (
                 <Link
                   to="/cart"
                   className="p-2 rounded-full bg-amber-100 text-amber-900 hover:bg-amber-200 hover:text-amber-700 transition-all duration-300 shadow-sm relative"
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  {/* Cart badge */}
+                 
                   <span className="absolute -top-1 -right-1 bg-rose-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     0
                   </span>
                 </Link>
-              )}
+              )} */}
 
               {/* User Section */}
               {user ? (
