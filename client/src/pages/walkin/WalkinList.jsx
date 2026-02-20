@@ -1,7 +1,4 @@
-// WalkinList.jsx (FULL WORKING + 390px OVERFLOW FIX + QuickActions + columns)
-// ✅ No blank page (columns & QuickActions included)
-// ✅ 390px: no horizontal overflow in filters section
-// ✅ Select dropdown stays within card (getPopupContainer)
+// WalkinList.jsx (FULL FINAL - Old Details Restored + 390px Overflow Fix + Dropdown Fix + No Blank Page)
 
 import React, { useState, useMemo } from "react";
 import {
@@ -253,19 +250,23 @@ const WalkinList = ({
           />
         </div>
       ),
+
       width: isMobile ? "92vw" : 820,
       centered: isMobile ? true : undefined,
       style: isMobile ? { padding: 0 } : undefined,
       wrapClassName: isMobile
         ? "premium-modal mobile-center-modal"
         : "premium-modal",
+
       maskClosable: false,
       keyboard: false,
+
       icon: null,
       closable: true,
       okButtonProps: { style: { display: "none" } },
       content: (
         <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Customer */}
           <Card size="small" title="Customer Information">
             <Row gutter={16}>
               <Col xs={24} md={12}>
@@ -304,12 +305,150 @@ const WalkinList = ({
               <Col xs={24} md={8}>
                 <div className="mb-3">
                   <div className="text-sm text-gray-600">Status</div>
-                  <Tag color={getStatusTag(walkin.status).color} className="font-semibold">
+                  <Tag
+                    color={getStatusTag(walkin.status).color}
+                    className="font-semibold"
+                  >
                     {walkin.status?.toUpperCase()}
                   </Tag>
                 </div>
               </Col>
             </Row>
+
+            {walkin.customerEmail && (
+              <div className="mb-3">
+                <div className="text-sm text-gray-600">Email</div>
+                <div className="font-semibold">{walkin.customerEmail}</div>
+              </div>
+            )}
+
+            {walkin.customerAddress && (
+              <div>
+                <div className="text-sm text-gray-600">Address</div>
+                <div className="font-semibold">{walkin.customerAddress}</div>
+              </div>
+            )}
+          </Card>
+
+          {/* Services */}
+          {walkin.services?.length > 0 && (
+            <Card size="small" title={`Services (${walkin.services.length})`}>
+              <div className="space-y-2">
+                {walkin.services.map((service, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {service.service?.name || "Service"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {service.category?.name || "Category"} •{" "}
+                        {service.duration || 0} mins
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-green-600">
+                        ₹{service.price?.toFixed(2) || "0.00"}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {service.staff?.name
+                          ? `Staff: ${service.staff.name}`
+                          : "No staff assigned"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Products */}
+          {walkin.products?.length > 0 && (
+            <Card size="small" title={`Products (${walkin.products.length})`}>
+              <div className="space-y-2">
+                {walkin.products.map((product, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {product.product?.name || "Product"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Quantity: {product.quantity || 1} • ₹
+                        {product.price?.toFixed(2) || "0.00"} each
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold text-green-600">
+                        ₹{product.total?.toFixed(2) || "0.00"}
+                      </div>
+                      <div className="text-xs text-gray-600">
+                        {product.stockDeducted
+                          ? "✓ Stock deducted"
+                          : "Stock pending"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Payment Summary */}
+          <Card
+            size="small"
+            title="Payment Summary"
+            className="bg-blue-50 border-blue-200"
+          >
+            <div className="space-y-3">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span className="font-semibold">
+                  ₹{walkin.subtotal?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Discount:</span>
+                <span className="font-semibold text-red-600">
+                  -₹{walkin.discount?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Total Amount:</span>
+                <span className="font-bold text-green-600 text-lg">
+                  ₹{walkin.totalAmount?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Amount Paid:</span>
+                <span className="font-semibold">
+                  ₹{walkin.amountPaid?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t pt-2">
+                <span>Due Amount:</span>
+                <span
+                  className={`font-bold text-lg ${
+                    (walkin.dueAmount || 0) > 0 ? "text-red-600" : "text-green-600"
+                  }`}
+                >
+                  ₹{walkin.dueAmount?.toFixed(2) || "0.00"}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Payment Status:</span>
+                <Tag
+                  color={getPaymentTag(walkin.paymentStatus).color}
+                  className="font-semibold"
+                >
+                  {walkin.paymentStatus?.toUpperCase() || "UNPAID"}
+                </Tag>
+              </div>
+            </div>
           </Card>
         </div>
       ),
@@ -334,9 +473,20 @@ const WalkinList = ({
       "Walk-in #": walkin.walkinNumber,
       "Customer Name": walkin.customerName,
       Phone: walkin.customerPhone,
+      Email: walkin.customerEmail,
       Branch: walkin.branch,
       Seat: getSeatLabel(walkin),
+      Services:
+        walkin.services?.map((s) => s.service?.name).join(", ") || "None",
+      Products:
+        walkin.products
+          ?.map((p) => `${p.product?.name} x${p.quantity}`)
+          .join(", ") || "None",
+      Subtotal: walkin.subtotal,
+      Discount: walkin.discount,
       "Total Amount": walkin.totalAmount,
+      "Amount Paid": walkin.amountPaid,
+      "Due Amount": walkin.dueAmount,
       "Payment Status": walkin.paymentStatus,
       "Walk-in Status": walkin.status,
       "Created Date": new Date(walkin.createdAt).toLocaleDateString(),
@@ -438,6 +588,13 @@ const WalkinList = ({
   const handleSaveStatus = async () => {
     if (!currentWalkin) return;
 
+    const currentStatus = currentWalkin.status || "draft";
+    if (selectedStatus === currentStatus) {
+      message.info("Status unchanged");
+      setStatusModalVisible(false);
+      return;
+    }
+
     try {
       const res = await api.patch(`/walkins/${currentWalkin._id}/status-only`, {
         status: selectedStatus,
@@ -520,6 +677,88 @@ const WalkinList = ({
       }
     } catch (error) {
       message.error(error.response?.data?.message || "Failed to update payment");
+    }
+  };
+
+  // Calculate price
+  const handleCalculatePrice = async (walkin) => {
+    try {
+      const response = await api.get(`/walkins/${walkin._id}`);
+      const latestWalkin = response.data?.data || response.data;
+      if (!latestWalkin) return message.error("Failed to fetch walk-in data");
+
+      const servicesTotal = (latestWalkin.services || []).reduce((sum, s) => {
+        const price = s.price || s.service?.pricing?.[0]?.price || 0;
+        return sum + price;
+      }, 0);
+
+      const productsTotal = (latestWalkin.products || []).reduce((sum, p) => {
+        const total = p.total || (p.price || 0) * (p.quantity || 1);
+        return sum + total;
+      }, 0);
+
+      const subtotal = servicesTotal + productsTotal;
+      const discount = latestWalkin.discount || 0;
+      const totalAmount = Math.max(subtotal - discount, 0);
+
+      Modal.confirm({
+        title: "Calculated Price",
+        wrapClassName: isMobile
+          ? "premium-modal mobile-center-modal"
+          : "premium-modal",
+        width: isMobile ? "92vw" : 520,
+        centered: isMobile ? true : undefined,
+        style: isMobile ? { padding: 0 } : undefined,
+        maskClosable: false,
+        keyboard: false,
+        content: (
+          <div className="space-y-2 py-4">
+            <div className="flex justify-between">
+              <span>Services Total:</span>
+              <span className="font-semibold">₹{servicesTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Products Total:</span>
+              <span className="font-semibold">₹{productsTotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span>Subtotal:</span>
+              <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Discount:</span>
+              <span className="font-semibold text-red-600">
+                -₹{discount.toFixed(2)}
+              </span>
+            </div>
+            <div className="flex justify-between border-t pt-2">
+              <span className="font-bold">Total Amount:</span>
+              <span className="font-bold text-green-600 text-lg">
+                ₹{totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ),
+        okText: "Save to Walk-in",
+        cancelText: "Cancel",
+        onOk: async () => {
+          try {
+            await api.put(`/walkins/${walkin._id}`, {
+              subtotal,
+              totalAmount,
+              discount,
+            });
+            message.success("Price calculated and saved!");
+            await fetchWalkins();
+          } catch (error) {
+            message.error(
+              error.response?.data?.message || "Failed to save calculated price"
+            );
+          }
+        },
+      });
+    } catch {
+      message.error("Failed to calculate price");
     }
   };
 
@@ -632,7 +871,7 @@ const WalkinList = ({
     walkinNumberFilter,
   ]);
 
-  // ===== Quick Actions (your same design) =====
+  // ===== Quick Actions =====
   const QuickActions = ({ record }) => {
     const servicesArr = record.services || [];
     const productsArr = record.products || [];
@@ -654,12 +893,9 @@ const WalkinList = ({
       setCurrentWalkin(record);
       setProductModalVisible(true);
     };
-    const openStatus = () => {
-      setCurrentWalkin(record);
-      setSelectedStatus(record.status || "draft");
-      setStatusModalVisible(true);
-    };
+    const openStatus = () => handleUpdateStatus(record);
     const openPayment = () => handleUpdatePayment(record);
+    const openCalc = () => handleCalculatePrice(record);
 
     const menuItems = [
       {
@@ -697,6 +933,7 @@ const WalkinList = ({
       },
       { type: "divider" },
 
+      { key: "m1", label: <b style={{ fontSize: 12, color: "#6b7280" }}>MANAGE</b>, disabled: true },
       {
         key: "services",
         label: (
@@ -746,6 +983,7 @@ const WalkinList = ({
 
       { type: "divider" },
 
+      { key: "m2", label: <b style={{ fontSize: 12, color: "#6b7280" }}>BILLING</b>, disabled: true },
       {
         key: "status",
         label: (
@@ -773,23 +1011,63 @@ const WalkinList = ({
         ),
         onClick: openPayment,
       },
+
+      { type: "divider" },
+
+      {
+        key: "calc",
+        label: (
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Calculator className="w-4 h-4" />
+              Calculate & Save
+            </span>
+            <Tag color={hasSelections ? "cyan" : "default"} style={{ margin: 0 }}>
+              {hasSelections ? "READY" : "PENDING"}
+            </Tag>
+          </div>
+        ),
+        onClick: openCalc,
+        disabled: !hasSelections,
+      },
     ];
 
     return (
-      <Space size="small" wrap>
+      <Space size="small" wrap className={isMobile ? "mobile-actions" : ""}>
+        <Tooltip
+          title={hasSelections ? "Calculate Price" : "Select services/products first"}
+        >
+          <Button
+            size="small"
+            type="primary"
+            disabled={!hasSelections}
+            icon={<Calculator className="w-4 h-4" />}
+            onClick={(e) => {
+              e?.stopPropagation?.();
+              openCalc();
+            }}
+          >
+            {isMobile ? "Calc" : "Calculate"}
+          </Button>
+        </Tooltip>
+
         <Dropdown
           trigger={["click"]}
           placement="bottomRight"
           overlayStyle={{ width: isMobile ? 300 : 320, maxWidth: "92vw" }}
           menu={{ items: menuItems }}
         >
-          <Button size="small" icon={<MoreOutlined />} onClick={(e) => e?.stopPropagation?.()} />
+          <Button
+            size="small"
+            icon={<MoreOutlined />}
+            onClick={(e) => e?.stopPropagation?.()}
+          />
         </Dropdown>
       </Space>
     );
   };
 
-  // ✅ columns (so table doesn't crash)
+  // ===== Desktop Table Columns =====
   const columns = [
     {
       title: "Walk-in #",
@@ -823,6 +1101,25 @@ const WalkinList = ({
       ),
     },
     {
+      title: "Services",
+      key: "services",
+      width: 260,
+      render: (_, record) => (
+        <div>
+          {record.services?.slice(0, 2).map((s, i) => (
+            <Tag key={i} color="blue" style={{ marginBottom: 6 }}>
+              {s.service?.name || "Service"}
+            </Tag>
+          ))}
+          {record.services?.length > 2 && (
+            <Tooltip title={`${record.services.length} services`}>
+              <Tag color="cyan">+{record.services.length - 2}</Tag>
+            </Tooltip>
+          )}
+        </div>
+      ),
+    },
+    {
       title: "Status",
       dataIndex: "status",
       key: "status",
@@ -847,7 +1144,7 @@ const WalkinList = ({
     {
       title: "Quick Actions",
       key: "manage",
-      width: 180,
+      width: 240,
       fixed: "right",
       render: (_, record) => <QuickActions record={record} />,
     },
@@ -884,6 +1181,18 @@ const WalkinList = ({
     },
   ];
 
+  // ===== Stats =====
+  const totalAmountSum = filteredWalkins.reduce(
+    (sum, w) => sum + (w.totalAmount || 0),
+    0
+  );
+  const totalInProgress = filteredWalkins.filter(
+    (w) => w.status === "in_progress"
+  ).length;
+  const totalCompleted = filteredWalkins.filter(
+    (w) => w.status === "completed"
+  ).length;
+
   // ===== Mobile Card =====
   const MobileWalkinCard = ({ w }) => {
     const statusMeta = getStatusTag(w.status);
@@ -916,6 +1225,33 @@ const WalkinList = ({
 
         <Divider style={{ margin: "10px 0" }} />
 
+        {/* Services/Products chips restored */}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {(w.services || []).slice(0, 2).map((s, i) => (
+            <Tag key={`s-${i}`} color="blue" style={{ margin: 0 }}>
+              {s.service?.name || "Service"}
+            </Tag>
+          ))}
+          {(w.services || []).length > 2 && (
+            <Tag color="cyan" style={{ margin: 0 }}>
+              +{(w.services || []).length - 2} Services
+            </Tag>
+          )}
+
+          {(w.products || []).slice(0, 1).map((p, i) => (
+            <Tag key={`p-${i}`} color="gold" style={{ margin: 0 }}>
+              {p.product?.name || "Product"}
+            </Tag>
+          ))}
+          {(w.products || []).length > 1 && (
+            <Tag color="gold" style={{ margin: 0 }}>
+              +{(w.products || []).length - 1} Products
+            </Tag>
+          )}
+        </div>
+
+        <Divider style={{ margin: "10px 0" }} />
+
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ fontSize: 12, color: "#6b7280" }}>Total</div>
@@ -928,29 +1264,36 @@ const WalkinList = ({
           </Tag>
         </div>
 
-        <div style={{ marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
-          <QuickActions record={w} />
+        <div style={{ marginTop: 10, display: "flex", justifyContent: "space-between", gap: 8 }}>
+          <div onClick={(e) => e.stopPropagation()}>
+            <QuickActions record={w} />
+          </div>
+
+          <Space onClick={(e) => e.stopPropagation()}>
+            <Tooltip title="PDF">
+              <Button
+                size="small"
+                icon={<FilePdfOutlined />}
+                onClick={() => handleDownloadPDF(w._id)}
+              />
+            </Tooltip>
+            <Tooltip title="QR">
+              <Button
+                size="small"
+                icon={<QrcodeOutlined />}
+                onClick={() => handleShowQR(w)}
+              />
+            </Tooltip>
+          </Space>
         </div>
       </Card>
     );
   };
 
-  // ===== Stats =====
-  const totalAmountSum = filteredWalkins.reduce(
-    (sum, w) => sum + (w.totalAmount || 0),
-    0
-  );
-  const totalInProgress = filteredWalkins.filter(
-    (w) => w.status === "in_progress"
-  ).length;
-  const totalCompleted = filteredWalkins.filter(
-    (w) => w.status === "completed"
-  ).length;
-
   return (
     <>
       <style>{`
-        /* ✅ Premium modal look */
+        /* ✅ Premium look */
         .premium-modal .ant-modal-content {
           border-radius: 16px !important;
           box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18) !important;
@@ -962,13 +1305,37 @@ const WalkinList = ({
           background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,250,251,0.98) 100%) !important;
         }
         .premium-modal .ant-modal-title { font-weight: 800 !important; }
+        .premium-modal .ant-modal-footer {
+          border-top: 1px solid rgba(148, 163, 184, 0.25) !important;
+          padding: 12px 16px !important;
+          background: rgba(249,250,251,0.98) !important;
+        }
+        .premium-modal .ant-modal-mask { backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 
-        /* ✅ MOBILE: card width */
+        /* ✅ Mobile UI */
         @media (max-width: 767px) {
+          .mobile-actions { width: 100%; justify-content: space-between; }
           .mobile-walkin-card { width: 100%; }
+          .ant-list-item { padding: 6px 0 !important; }
+          .ant-dropdown-menu-item { padding: 12px 12px !important; border-radius: 12px; margin: 6px 6px; }
+          .ant-dropdown-menu { border-radius: 14px !important; }
+
+          .mobile-center-modal .ant-modal {
+            width: 92vw !important;
+            max-width: 92vw !important;
+            margin: 0 auto !important;
+            left: 0 !important;
+            right: 0 !important;
+            top: auto !important;
+            padding-bottom: 0 !important;
+          }
+          .mobile-center-modal .ant-modal-body {
+            max-height: calc(100vh - 180px) !important;
+            overflow: auto !important;
+          }
         }
 
-        /* ✅ 390px HARD FIX PACK (filters overflow) */
+        /* ✅ 390px HARD FIX: stop any horizontal overflow + selects within container */
         @media (max-width: 390px) {
           html, body, #root { width: 100%; overflow-x: hidden !important; }
 
@@ -978,14 +1345,11 @@ const WalkinList = ({
             overflow-x: hidden !important;
           }
 
-          /* gutter negative margins killer */
           .walkin-filters-row {
             margin-left: 0 !important;
             margin-right: 0 !important;
             width: 100% !important;
           }
-
-          /* Col padding remove + allow shrink */
           .walkin-filters-col {
             padding-left: 0 !important;
             padding-right: 0 !important;
@@ -993,7 +1357,6 @@ const WalkinList = ({
             max-width: 100% !important;
           }
 
-          /* Inputs/Selects safe */
           .walkin-filters-card .ant-input-affix-wrapper,
           .walkin-filters-card .ant-select {
             width: 100% !important;
@@ -1011,7 +1374,7 @@ const WalkinList = ({
             max-width: 100% !important;
           }
 
-          /* actions stacked */
+          /* buttons stack */
           .walkin-filters-actions-col {
             display: grid !important;
             grid-template-columns: 1fr !important;
@@ -1022,6 +1385,8 @@ const WalkinList = ({
 
           .ant-select-dropdown { max-width: 92vw !important; }
         }
+
+        .ant-dropdown-menu-item:hover { background: #f5f7ff !important; }
       `}</style>
 
       {/* Filters */}
@@ -1041,7 +1406,6 @@ const WalkinList = ({
             />
           </Col>
 
-          {/* ✅ 390px -> xs=24 (single column) */}
           <Col xs={24} sm={12} md={4} className="walkin-filters-col">
             <Select
               value={statusFilter}
@@ -1086,7 +1450,12 @@ const WalkinList = ({
             </Select>
           </Col>
 
-          <Col xs={24} md={4} className="walkin-filters-col walkin-filters-actions-col">
+          <Col
+            xs={24}
+            md={8}
+            className="walkin-filters-col walkin-filters-actions-col"
+            style={!isMobile ? { display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" } : undefined}
+          >
             <Button
               className="walkin-btn"
               icon={<FilterOutlined />}
@@ -1178,6 +1547,7 @@ const WalkinList = ({
         open={advancedOpen}
         onClose={() => setAdvancedOpen(false)}
         width={isMobile ? "100%" : 440}
+        className={isMobile ? "mobile-drawer" : ""}
         extra={
           <Space>
             <Button onClick={clearAdvancedFilters} icon={<ClearOutlined />}>
@@ -1290,12 +1660,31 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
+          wrapClassName={
+            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
+          }
           maskClosable={false}
           keyboard={false}
         >
           <div className="py-4">
-            <Select value={selectedStatus} onChange={setSelectedStatus} style={{ width: "100%" }} size="large">
+            <div className="mb-4">
+              <span className="text-sm text-gray-600">Current Status: </span>
+              <Tag color={getStatusTag(currentWalkin.status).color}>
+                {(currentWalkin.status || "draft").toUpperCase()}
+              </Tag>
+            </div>
+
+            <div className="mb-2">
+              <span className="text-sm font-medium">Select New Status:</span>
+            </div>
+
+            <Select
+              value={selectedStatus}
+              onChange={setSelectedStatus}
+              style={{ width: "100%" }}
+              size="large"
+              getPopupContainer={(trigger) => trigger.parentElement}
+            >
               <Option value="draft">Draft</Option>
               <Option value="confirmed">Confirmed</Option>
               <Option value="in_progress">In Progress</Option>
@@ -1325,45 +1714,117 @@ const WalkinList = ({
           width={isMobile ? "92vw" : 420}
           centered={isMobile ? true : undefined}
           style={isMobile ? { padding: 0 } : undefined}
-          wrapClassName={isMobile ? "premium-modal mobile-center-modal" : "premium-modal"}
+          wrapClassName={
+            isMobile ? "premium-modal mobile-center-modal" : "premium-modal"
+          }
           maskClosable={false}
           keyboard={false}
         >
           <div className="py-4 space-y-4">
-            <div className="flex gap-2">
-              <Select value={discountType} onChange={setDiscountType} style={{ width: 140 }} size="large">
-                <Option value="amount">Amount (₹)</Option>
-                <Option value="percentage">Percentage (%)</Option>
-              </Select>
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Subtotal:</span>
+              </div>
+              <Tag color="blue" className="text-lg font-bold">
+                ₹{(currentWalkin.subtotal || currentWalkin.totalAmount || 0).toFixed(2)}
+              </Tag>
+            </div>
 
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Discount:</span>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <Select
+                  value={discountType}
+                  onChange={setDiscountType}
+                  style={{ width: 140 }}
+                  size="large"
+                  getPopupContainer={(trigger) => trigger.parentElement}
+                >
+                  <Option value="amount">Amount (₹)</Option>
+                  <Option value="percentage">Percentage (%)</Option>
+                </Select>
+
+                <InputNumber
+                  value={discountValue}
+                  onChange={(value) => setDiscountValue(value || 0)}
+                  style={{ flex: 1 }}
+                  size="large"
+                  min={0}
+                  max={
+                    discountType === "percentage"
+                      ? 100
+                      : currentWalkin.subtotal || currentWalkin.totalAmount || 0
+                  }
+                  formatter={(value) =>
+                    discountType === "percentage"
+                      ? `${value}%`
+                      : `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value) => value.replace(/₹\s?|%|(,*)/g, "")}
+                />
+              </div>
+
+              {discountValue > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Discount: ₹{calculateDiscountAmount().toFixed(2)}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Total After Discount:</span>
+              </div>
+              <Tag color="green" className="text-lg font-bold">
+                ₹{calculateTotalAfterDiscount().toFixed(2)}
+              </Tag>
+            </div>
+
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Amount Paid:</span>
+              </div>
               <InputNumber
-                value={discountValue}
-                onChange={(value) => setDiscountValue(value || 0)}
-                style={{ flex: 1 }}
+                value={paymentAmount}
+                onChange={(value) => setPaymentAmount(value || 0)}
+                style={{ width: "100%" }}
                 size="large"
                 min={0}
-                max={
-                  discountType === "percentage"
-                    ? 100
-                    : currentWalkin.subtotal || currentWalkin.totalAmount || 0
+                max={calculateTotalAfterDiscount()}
+                formatter={(value) =>
+                  `₹ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
+                parser={(value) => value.replace(/₹\s?|(,*)/g, "")}
               />
             </div>
 
-            <InputNumber
-              value={paymentAmount}
-              onChange={(value) => setPaymentAmount(value || 0)}
-              style={{ width: "100%" }}
-              size="large"
-              min={0}
-              max={calculateTotalAfterDiscount()}
-            />
+            <div>
+              <div className="mb-2">
+                <span className="text-sm font-medium">Payment Method:</span>
+              </div>
+              <Select
+                value={paymentMethod}
+                onChange={setPaymentMethod}
+                style={{ width: "100%" }}
+                size="large"
+                getPopupContainer={(trigger) => trigger.parentElement}
+              >
+                <Option value="cash">Cash</Option>
+                <Option value="card">Card</Option>
+                <Option value="online">Online</Option>
+              </Select>
+            </div>
 
-            <Select value={paymentMethod} onChange={setPaymentMethod} style={{ width: "100%" }} size="large">
-              <Option value="cash">Cash</Option>
-              <Option value="card">Card</Option>
-              <Option value="online">Online</Option>
-            </Select>
+            <div className="pt-2 border-t space-y-1">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-600">Due Amount:</span>
+                <span className="font-semibold">
+                  ₹{Math.max(calculateTotalAfterDiscount() - (paymentAmount || 0), 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
         </Modal>
       )}
