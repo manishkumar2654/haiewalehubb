@@ -200,11 +200,7 @@
 
 
 
-// InlineEmployeeSelector.jsx - Employee selection modal for walk-in table
-// ✅ FIX: Employees data "guaranteed fetch" with multiple endpoints + proper response parsing
-// ✅ Shows clear error if API blocked (401/403/404)
-// ✅ No change in overall feature (still select/deselect + save)
-
+// InlineEmployeeSelector.jsx - EmployeeRole selection modal (using EmployeeRole collection)
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Card, Table, Button, Input, Tag, message } from "antd";
 import { Search, User, Check } from "lucide-react";
@@ -216,72 +212,53 @@ const InlineEmployeeSelector = ({
   walkin,
   onEmployeesSelected,
 }) => {
-  const [employees, setEmployees] = useState([]);
-  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [employees, setEmployees] = useState([]); // ✅ here "employees" = EmployeeRoles list
+  const [selectedEmployees, setSelectedEmployees] = useState([]); // selected roles
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ response parser (handles many backend shapes)
+  // ✅ Extract array from any response shape
   const extractArray = (res) => {
     const root = res?.data || {};
     const payload =
+      root.data ||
       root.users ||
       root.employees ||
-      root.data?.users ||
-      root.data?.employees ||
-      root.data ||
-      root.results ||
+      root.roles ||
+      root.employeeRoles ||
       root.items ||
-      root.list ||
+      root.results ||
       [];
-
     return Array.isArray(payload) ? payload : [];
   };
 
-  // ✅ normalize id + basic cleanup
-  const normalize = (arr) => {
+  // ✅ Normalize EmployeeRole -> usable rows
+  const normalizeRoles = (arr) => {
     return (Array.isArray(arr) ? arr : [])
       .filter(Boolean)
-      .map((u) => ({
-        ...u,
-        _id: u._id || u.id,
+      .map((r) => ({
+        ...r,
+        _id: r._id || r.id,
+        name: r.name || "N/A",
+        description: r.description || "",
+        permissions: Array.isArray(r.permissions) ? r.permissions : [],
+        isActive: typeof r.isActive === "boolean" ? r.isActive : true,
       }))
-      .filter((u) => u._id);
-  };
-
-  // ✅ fallback employee detector (in case endpoint returns all users)
-  const isEmployee = (u) => {
-    const role = (u?.role || u?.userRole || u?.type || "")
-      .toString()
-      .toLowerCase();
-    const rolesArr = Array.isArray(u?.roles)
-      ? u.roles.map((r) => String(r).toLowerCase())
-      : [];
-    const employeeRole = (u?.employeeRole || "").toString().toLowerCase();
-
-    return (
-      role === "employee" ||
-      role === "staff" ||
-      rolesArr.includes("employee") ||
-      rolesArr.includes("staff") ||
-      employeeRole.length > 0
-    );
+      .filter((r) => r._id);
   };
 
   const fetchAllEmployees = async () => {
     try {
       setLoading(true);
 
-      // ✅ try filtered first, then broad endpoints
+      // ✅ Try common endpoints for EmployeeRole collection
       const endpoints = [
-        "/admin/users?role=employee",
-        "/admin/users?type=employee",
-        "/admin/users", // broad -> filter client-side
-        "/users?role=employee",
-        "/users?type=employee",
-        "/users", // broad -> filter client-side
-        "/employees",
-        "/staff",
+        "/employee-roles",
+        "/employeeRoles",
+        "/employeeroles",
+        "/employee-role",
+        "/admin/employee-roles",
+        "/admin/employeeroles",
       ];
 
       let lastError = null;
@@ -289,14 +266,7 @@ const InlineEmployeeSelector = ({
       for (const url of endpoints) {
         try {
           const res = await api.get(url);
-
-          let list = normalize(extractArray(res));
-
-          // if broad list, filter to employees
-          if (url === "/admin/users" || url === "/users") {
-            list = list.filter(isEmployee);
-          }
-
+          const list = normalizeRoles(extractArray(res));
           if (list.length) {
             setEmployees(list);
             return;
@@ -306,15 +276,13 @@ const InlineEmployeeSelector = ({
         }
       }
 
-      // ✅ nothing found -> show clear error
       const status = lastError?.response?.status;
       const msg =
         lastError?.response?.data?.message ||
         lastError?.message ||
-        "No employees found / API blocked";
-
+        "EmployeeRole endpoint not working";
       message.error(
-        `Employees load failed${status ? ` (HTTP ${status})` : ""}: ${msg}`
+        `Employee roles load failed${status ? ` (HTTP ${status})` : ""}: ${msg}`
       );
       setEmployees([]);
     } finally {
@@ -325,52 +293,40 @@ const InlineEmployeeSelector = ({
   useEffect(() => {
     if (!visible) return;
 
-    // ✅ load employees
     fetchAllEmployees();
 
-    // ✅ Initialize with existing staff from services
+    // ✅ Preselect (optional): if walkin has existing staff/roles saved
     if (walkin?.services) {
-      const existingStaff = walkin.services
+      const existing = walkin.services
         .map((s) => s?.staff)
         .filter(Boolean)
         .map((staff) => {
-          // staff can be object OR id string
           if (typeof staff === "string") {
-            return {
-              _id: staff,
-              name: "Unknown",
-              employeeRole: "",
-              employeeId: "",
-              email: "",
-              workingLocation: "",
-            };
+            return { _id: staff, name: "Unknown", description: "" };
           }
           return {
             _id: staff._id || staff.id || staff,
             name: staff.name || "Unknown",
-            employeeRole: staff.employeeRole || "",
-            employeeId: staff.employeeId || "",
-            email: staff.email || "",
-            workingLocation: staff.workingLocation || "",
+            description: staff.description || "",
           };
         })
         .filter((x) => x._id);
 
-      setSelectedEmployees(existingStaff);
+      setSelectedEmployees(existing);
     } else {
       setSelectedEmployees([]);
     }
   }, [visible, walkin]);
 
-  const handleToggleEmployee = (employee) => {
-    const isSelected = selectedEmployees.some((e) => e._id === employee._id);
+  const handleToggleEmployee = (role) => {
+    const isSelected = selectedEmployees.some((e) => e._id === role._id);
 
     if (isSelected) {
-      setSelectedEmployees((prev) => prev.filter((e) => e._id !== employee._id));
-      message.info(`Removed ${employee.name}`);
+      setSelectedEmployees((prev) => prev.filter((e) => e._id !== role._id));
+      message.info(`Removed ${role.name}`);
     } else {
-      setSelectedEmployees((prev) => [...prev, employee]);
-      message.success(`Added ${employee.name}`);
+      setSelectedEmployees((prev) => [...prev, role]);
+      message.success(`Added ${role.name}`);
     }
   };
 
@@ -383,49 +339,45 @@ const InlineEmployeeSelector = ({
     const list = employees || [];
     if (!searchTerm) return list;
 
-    const search = searchTerm.toLowerCase();
-    return list.filter((emp) => {
+    const s = searchTerm.toLowerCase();
+    return list.filter((r) => {
       return (
-        emp.name?.toLowerCase().includes(search) ||
-        emp.email?.toLowerCase().includes(search) ||
-        emp.employeeId?.toLowerCase().includes(search) ||
-        emp.employeeRole?.toLowerCase().includes(search) ||
-        emp.workingLocation?.toLowerCase().includes(search)
+        r.name?.toLowerCase().includes(s) ||
+        r.description?.toLowerCase().includes(s) ||
+        (r.permissions || []).join(",").toLowerCase().includes(s)
       );
     });
   }, [employees, searchTerm]);
 
   const columns = [
     {
-      title: "Name",
+      title: "Role Name",
       dataIndex: "name",
       key: "name",
       render: (name, record) => (
         <div>
-          <div className="font-medium">{name || "N/A"}</div>
-          <div className="text-xs text-gray-500">{record.email || ""}</div>
+          <div className="font-medium">{name}</div>
+          <div className="text-xs text-gray-500">
+            {record.isActive ? "Active" : "Inactive"}
+          </div>
         </div>
       ),
     },
     {
-      title: "Employee ID",
-      dataIndex: "employeeId",
-      key: "employeeId",
-      render: (id) => <Tag color="blue">{id || "N/A"}</Tag>,
+      title: "Description",
+      dataIndex: "description",
+      key: "description",
+      render: (d) => (d ? d : "—"),
     },
     {
-      title: "Role",
-      dataIndex: "employeeRole",
-      key: "employeeRole",
-      render: (role) => (
-        <Tag color="purple">{role ? String(role).toUpperCase() : "N/A"}</Tag>
+      title: "Permissions",
+      dataIndex: "permissions",
+      key: "permissions",
+      render: (perms) => (
+        <Tag color={perms?.length ? "blue" : "default"}>
+          {perms?.length ? `${perms.length} perms` : "No perms"}
+        </Tag>
       ),
-    },
-    {
-      title: "Location",
-      dataIndex: "workingLocation",
-      key: "workingLocation",
-      render: (v) => v || "—",
     },
     {
       title: "Action",
@@ -453,7 +405,7 @@ const InlineEmployeeSelector = ({
 
   return (
     <Modal
-      title={`Select Employees - ${walkin?.walkinNumber || ""}`}
+      title={`Select Employee Roles - ${walkin?.walkinNumber || ""}`}
       open={visible}
       onCancel={onClose}
       width={900}
@@ -462,43 +414,40 @@ const InlineEmployeeSelector = ({
           Cancel
         </Button>,
         <Button key="save" type="primary" onClick={handleSave}>
-          Save Employees ({selectedEmployees.length})
+          Save ({selectedEmployees.length})
         </Button>,
       ]}
     >
       <div className="space-y-4">
-        {/* Search */}
         <Input
-          placeholder="Search employees by name, email, ID, role, location..."
+          placeholder="Search by role name / description / permission..."
           prefix={<Search className="w-4 h-4" />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           allowClear
         />
 
-        {/* Selected Employees Summary */}
         {selectedEmployees.length > 0 && (
           <Card size="small" className="bg-blue-50">
             <div className="flex flex-wrap gap-2">
-              {selectedEmployees.map((emp) => (
+              {selectedEmployees.map((r) => (
                 <Tag
-                  key={emp._id}
+                  key={r._id}
                   color="blue"
                   closable
                   onClose={() =>
                     setSelectedEmployees((prev) =>
-                      prev.filter((e) => e._id !== emp._id)
+                      prev.filter((e) => e._id !== r._id)
                     )
                   }
                 >
-                  {emp.name} ({emp.employeeRole || "Staff"})
+                  {r.name}
                 </Tag>
               ))}
             </div>
           </Card>
         )}
 
-        {/* Employees Table */}
         <Table
           dataSource={filteredEmployees}
           columns={columns}
