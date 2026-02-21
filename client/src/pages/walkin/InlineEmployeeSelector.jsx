@@ -201,8 +201,9 @@
 
 
 // InlineEmployeeSelector.jsx - Employee selection modal for walk-in table
-// ✅ FIX: Employees data reliable load (supports props OR fallback API)
-// ✅ No functionality change, only data-loading made robust
+// ✅ FIX: Employees data "guaranteed fetch" with multiple endpoints + proper response parsing
+// ✅ Shows clear error if API blocked (401/403/404)
+// ✅ No change in overall feature (still select/deselect + save)
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Modal, Card, Table, Button, Input, Tag, message } from "antd";
@@ -214,97 +215,120 @@ const InlineEmployeeSelector = ({
   onClose,
   walkin,
   onEmployeesSelected,
-
-  // ✅ optional (if parent passes)
-  employees: employeesProp,
-  employeesLoading: employeesLoadingProp,
 }) => {
   const [employees, setEmployees] = useState([]);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // ✅ normalize different backend shapes safely
-  const normalizeEmployees = (payload) => {
-    const arr = Array.isArray(payload)
-      ? payload
-      : Array.isArray(payload?.users)
-      ? payload.users
-      : Array.isArray(payload?.data)
-      ? payload.data
-      : Array.isArray(payload?.employees)
-      ? payload.employees
-      : Array.isArray(payload?.results)
-      ? payload.results
-      : Array.isArray(payload?.items)
-      ? payload.items
-      : [];
+  // ✅ response parser (handles many backend shapes)
+  const extractArray = (res) => {
+    const root = res?.data || {};
+    const payload =
+      root.users ||
+      root.employees ||
+      root.data?.users ||
+      root.data?.employees ||
+      root.data ||
+      root.results ||
+      root.items ||
+      root.list ||
+      [];
 
-    // sanitize ids to keep rowKey stable
-    return arr
-      .filter(Boolean)
-      .map((e) => ({
-        ...e,
-        _id: e._id || e.id, // support id fallback
-      }))
-      .filter((e) => e._id);
+    return Array.isArray(payload) ? payload : [];
   };
 
-  // ✅ fetch employees with fallback endpoints (only if props not provided)
+  // ✅ normalize id + basic cleanup
+  const normalize = (arr) => {
+    return (Array.isArray(arr) ? arr : [])
+      .filter(Boolean)
+      .map((u) => ({
+        ...u,
+        _id: u._id || u.id,
+      }))
+      .filter((u) => u._id);
+  };
+
+  // ✅ fallback employee detector (in case endpoint returns all users)
+  const isEmployee = (u) => {
+    const role = (u?.role || u?.userRole || u?.type || "")
+      .toString()
+      .toLowerCase();
+    const rolesArr = Array.isArray(u?.roles)
+      ? u.roles.map((r) => String(r).toLowerCase())
+      : [];
+    const employeeRole = (u?.employeeRole || "").toString().toLowerCase();
+
+    return (
+      role === "employee" ||
+      role === "staff" ||
+      rolesArr.includes("employee") ||
+      rolesArr.includes("staff") ||
+      employeeRole.length > 0
+    );
+  };
+
   const fetchAllEmployees = async () => {
     try {
       setLoading(true);
 
+      // ✅ try filtered first, then broad endpoints
       const endpoints = [
         "/admin/users?role=employee",
         "/admin/users?type=employee",
+        "/admin/users", // broad -> filter client-side
         "/users?role=employee",
         "/users?type=employee",
-        "/users/employees",
+        "/users", // broad -> filter client-side
         "/employees",
         "/staff",
       ];
 
-      let found = [];
+      let lastError = null;
 
       for (const url of endpoints) {
         try {
           const res = await api.get(url);
-          const payload = res.data?.data ?? res.data; // support {data:{...}} or {...}
-          const list = normalizeEmployees(payload);
+
+          let list = normalize(extractArray(res));
+
+          // if broad list, filter to employees
+          if (url === "/admin/users" || url === "/users") {
+            list = list.filter(isEmployee);
+          }
+
           if (list.length) {
-            found = list;
-            break;
+            setEmployees(list);
+            return;
           }
         } catch (e) {
-          // try next endpoint
+          lastError = e;
         }
       }
 
-      setEmployees(found);
-      if (!found.length) message.warning("No employees found");
-    } catch (error) {
-      console.error("Failed to fetch employees:", error);
-      message.error("Failed to load employees");
+      // ✅ nothing found -> show clear error
+      const status = lastError?.response?.status;
+      const msg =
+        lastError?.response?.data?.message ||
+        lastError?.message ||
+        "No employees found / API blocked";
+
+      message.error(
+        `Employees load failed${status ? ` (HTTP ${status})` : ""}: ${msg}`
+      );
       setEmployees([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ initialize selection from walkin services (more robust for string/object staff)
   useEffect(() => {
     if (!visible) return;
 
-    // 1) Load employees list:
-    // If parent passed employees, use them; else fetch internally
-    if (Array.isArray(employeesProp)) {
-      setEmployees(normalizeEmployees(employeesProp));
-    } else {
-      fetchAllEmployees();
-    }
+    // ✅ load employees
+    fetchAllEmployees();
 
-    // 2) Preselect existing staff from services:
+    // ✅ Initialize with existing staff from services
     if (walkin?.services) {
       const existingStaff = walkin.services
         .map((s) => s?.staff)
@@ -317,6 +341,8 @@ const InlineEmployeeSelector = ({
               name: "Unknown",
               employeeRole: "",
               employeeId: "",
+              email: "",
+              workingLocation: "",
             };
           }
           return {
@@ -328,17 +354,13 @@ const InlineEmployeeSelector = ({
             workingLocation: staff.workingLocation || "",
           };
         })
-        .filter((s) => s._id);
+        .filter((x) => x._id);
 
       setSelectedEmployees(existingStaff);
     } else {
       setSelectedEmployees([]);
     }
-  }, [visible, walkin, employeesProp]);
-
-  // ✅ if parent loading changes, reflect in UI (optional)
-  const effectiveLoading =
-    typeof employeesLoadingProp === "boolean" ? employeesLoadingProp : loading;
+  }, [visible, walkin]);
 
   const handleToggleEmployee = (employee) => {
     const isSelected = selectedEmployees.some((e) => e._id === employee._id);
@@ -447,7 +469,7 @@ const InlineEmployeeSelector = ({
       <div className="space-y-4">
         {/* Search */}
         <Input
-          placeholder="Search employees by name, email, ID, or role..."
+          placeholder="Search employees by name, email, ID, role, location..."
           prefix={<Search className="w-4 h-4" />}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -480,7 +502,7 @@ const InlineEmployeeSelector = ({
         <Table
           dataSource={filteredEmployees}
           columns={columns}
-          loading={effectiveLoading}
+          loading={loading}
           pagination={{ pageSize: 10 }}
           rowKey="_id"
           size="small"
